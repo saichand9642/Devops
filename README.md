@@ -1,25 +1,44 @@
 # DevOps Learning Hub
 
-An installable, offline-capable study app for DevOps certifications. The first course is **CKAD — Certified Kubernetes Application Developer**, covering the complete published curriculum from beginner level to exam-ready.
+An installable, offline-capable study app for DevOps certifications. Two courses are installed:
+
+- **CKAD — Certified Kubernetes Application Developer** (Kubernetes v1.35)
+- **Terraform Associate (004)** (Terraform v1.16)
+
+Each covers its complete published curriculum from beginner level to exam-ready, with flow diagrams on every lesson.
 
 Built as a React + TypeScript + Vite Progressive Web App. No backend, no account, no tracking — everything runs in your browser and your progress stays on your device.
 
-> **This is an independent learning tool.** It is not affiliated with, endorsed by or sponsored by the Cloud Native Computing Foundation or the Linux Foundation, and it is not an App Store application. Every practice question, lab and mock exam here is original material written for this app — none are real exam questions, and no leaked or recalled exam content is used.
+> **This is an independent learning tool.** It is not affiliated with, endorsed by or sponsored by any certification body — including the Cloud Native Computing Foundation, the Linux Foundation and HashiCorp — and it is not an App Store application. Every practice question, lab and mock exam here is original material written for this app — none are real exam questions, and no leaked or recalled exam content is used.
 
 ---
 
 ## What is in it
 
-|                             |                                                                                                                                                                                                                                                                                                                                                                        |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **50 lessons**              | Every lesson has a beginner explanation, why it matters, how it works, key objects and fields, a real-world example, complete YAML, imperative commands, the declarative method, verification commands, troubleshooting commands, common mistakes, exam tips, a summary, three or more practice questions with hidden answers, and a hands-on lab with a full solution |
-| **116 practice questions**  | Multiple choice, multi-select, free-text command, YAML correction, troubleshooting scenarios and performance-based lab tasks — all with explanations                                                                                                                                                                                                                   |
-| **Mock exams**              | Timed papers whose question mix follows the official domain weights, scored per domain against the 66% pass mark, with attempt history saved locally                                                                                                                                                                                                                   |
-| **~130 reference commands** | Searchable kubectl, Helm and Kustomize cheat sheet with copy buttons, plus the YAML templates worth memorising                                                                                                                                                                                                                                                         |
-| **Search**                  | Across lesson text, Kubernetes objects and fields, commands and the question bank, filterable by domain, difficulty and result type                                                                                                                                                                                                                                    |
-| **Progress tracking**       | Per-lesson status, practice history, exam attempts, study streak and an exam-readiness indicator — with JSON export and import                                                                                                                                                                                                                                         |
+|                            |                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **91 lessons**             | 50 CKAD + 41 Terraform, each with a hands-on lab. Every lesson has a beginner explanation, why it matters, how it works, **flow diagrams**, key objects and fields, a real-world example, complete YAML or HCL, imperative commands, the declarative method, verification commands, troubleshooting commands, common mistakes, exam tips, a summary, three or more practice questions with hidden answers, and a hands-on lab with a full solution |
+| **234 practice questions** | 116 CKAD + 118 Terraform, plus 314 in-lesson practice questions. Multiple choice, multi-select, free-text command, YAML/HCL correction, troubleshooting scenarios and performance-based lab tasks — all with explanations                                                                                                                                                                                                                          |
+| **172 diagrams**           | Flow, sequence, containment and decision diagrams, rendered as inline SVG from typed data — theme-aware, offline, and with a text version of every one                                                                                                                                                                                                                                                                                             |
+| **Mock exams**             | Timed papers weighted per domain, scored per domain, with attempt history saved locally                                                                                                                                                                                                                                                                                                                                                            |
+| **258 reference commands** | Searchable kubectl / Helm / Kustomize and Terraform CLI references with copy buttons, plus the YAML and HCL templates worth memorising                                                                                                                                                                                                                                                                                                             |
+| **Search**                 | Across lesson text, objects and fields, commands and the question bank — filterable by domain, difficulty and result type, per course                                                                                                                                                                                                                                                                                                              |
+| **Progress tracking**      | Per-lesson status, practice history, exam attempts, study streak and an exam-readiness indicator — with JSON export and import                                                                                                                                                                                                                                                                                                                     |
+
+### Diagrams
+
+Every lesson carries at least one diagram. They are authored as **typed data**, not images or Mermaid source, and rendered to inline SVG at runtime:
+
+- **Flow** — an ordered pipeline, with optional failure branches (`terraform apply`, probe outcomes, a rolling update)
+- **Sequence** — who calls whom, in order (`kubectl apply` end to end, a DNS lookup, an operator reconcile loop)
+- **Containment** — what lives inside what (cluster/node/pod, root and child modules, Service type layering)
+- **Decision** — mutually exclusive choices (which workload resource, `count` or `for_each`, which Service type)
+
+Why data rather than a diagram library: nothing extra to download so lessons stay usable offline, colours come from the same design tokens as the rest of the app so every diagram is readable in light and dark themes, and a bad reference is a build error. Geometry lives in `src/lib/diagram-layout.ts` as pure, unit-tested functions; the character-width constants used for text wrapping were measured in a real browser across 365 rendered labels rather than guessed. Each diagram also has a **Text version** disclosure, since an SVG full of absolutely positioned `<text>` nodes is close to useless to a screen reader.
 
 ### Curriculum coverage
+
+#### CKAD
 
 Domain weights are taken from the official CNCF / Linux Foundation curriculum, verified on **2026-09-03** against **CKAD_Curriculum_v1.35** (exam environment **Kubernetes v1.35**, 2 hours, 66% to pass).
 
@@ -40,7 +59,32 @@ Sources, linked in the app itself:
 - [Linux Foundation CKAD exam page](https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/) — domains and competencies
 - [CKA/CKAD/CKS FAQ](https://docs.linuxfoundation.org/tc-docs/certification/faq-cka-ckad-cks) — exam environment version and pass mark
 
-**Check the official curriculum before your exam.** It is updated roughly quarterly to track Kubernetes releases, and this app is a study aid, not a source of truth.
+#### Terraform Associate (004)
+
+Objectives and competencies are quoted from HashiCorp's published exam content list, verified on **2026-09-04**. The exam is **multiple choice**, **1 hour**, online proctored, **$70.50 USD**, valid **two years**.
+
+| Objective                                 | Sub-objectives      | Lessons |
+| ----------------------------------------- | ------------------- | ------- |
+| 1. Infrastructure as Code with Terraform  | 3                   | 3       |
+| 2. Terraform fundamentals                 | 4                   | 5       |
+| 3. Core Terraform workflow                | 7                   | 5       |
+| 4. Terraform configuration                | 8                   | 10      |
+| 5. Terraform modules                      | 4                   | 4       |
+| 6. Terraform state management             | 4                   | 5       |
+| 7. Maintain infrastructure with Terraform | 3                   | 3       |
+| 8. HCP Terraform                          | 4                   | 4       |
+| Exam Technique                            | _added by this app_ | 2       |
+
+> **Important.** HashiCorp publishes the objectives, the format, the duration and the cost — but **not** the question count, **not** a pass mark, and **not** a per-objective weighting. The mock-exam weights and the 70% target score in this app are therefore its **own study aids**, derived from the number of published sub-objectives per objective. The app says so wherever those figures appear, and no Terraform domain claims an official percentage. Do not treat them as a prediction.
+
+Sources, linked in the app itself:
+
+- [Exam content list (004)](https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004) — objectives and sub-objectives
+- [Certification overview](https://developer.hashicorp.com/certifications/infrastructure-automation) — format, duration, cost, validity
+- [Terraform documentation](https://developer.hashicorp.com/terraform/docs)
+- [HCP Terraform documentation](https://developer.hashicorp.com/terraform/cloud-docs)
+
+**Check the official curriculum before your exam.** Both are updated periodically, and this app is a study aid, not a source of truth.
 
 ---
 
@@ -155,24 +199,31 @@ src/
 ├── content/
 │   ├── types.ts                    # the content model: Topic, Question, Course, ...
 │   ├── courses.ts                  # course registry + "planned" courses
-│   ├── content.test.ts             # integrity tests over all content
-│   └── ckad/
-│       ├── index.ts                # the CKAD Course object: weights, pass mark, sources
-│       ├── domains.ts              # the 5 weighted domains + 2 support sections
-│       ├── commands.ts             # the searchable command reference
-│       ├── questions/              # question bank, one file per domain
-│       └── topics/
-│           ├── index.ts            # aggregates every topic
-│           ├── foundations/        # one file per lesson
-│           ├── design-build/
-│           ├── deployment/
-│           ├── observability/
-│           ├── environment-security/
-│           ├── services-networking/
-│           └── exam-prep/
-├── lib/                            # storage, scoring, exam builder, search, stats, SW update
-├── components/                     # UI primitives, layout, question renderer
-├── pages/                          # one file per route
+│   ├── registry.ts                 # per-course lookup indexes used by every page
+│   ├── courses.test.ts             # integrity tests that run over EVERY course
+│   ├── content.test.ts             # CKAD-specific content tests
+│   ├── ckad/
+│   │   ├── index.ts                # the CKAD Course object: weights, pass mark, sources
+│   │   ├── domains.ts              # the 5 weighted domains + 2 support sections
+│   │   ├── commands.ts             # the searchable command reference
+│   │   ├── questions/              # question bank, one file per domain
+│   │   └── topics/                 # one directory per domain, one file per lesson
+│   └── terraform/
+│       ├── index.ts                # the Terraform Course object
+│       ├── domains.ts              # the 8 published objectives + exam technique
+│       ├── commands.ts             # CLI reference + HCL templates
+│       ├── questions/              # question bank, one file per objective
+│       └── topics/                 # iac, fundamentals, workflow, configuration,
+│                                   #   modules, state, maintenance, hcp, exam-prep
+├── lib/
+│   ├── diagram-layout.ts           # pure, unit-tested diagram geometry
+│   ├── hcl-language.ts             # highlight.js definition for HCL/Terraform
+│   ├── use-course.ts               # resolves the course from the route
+│   └── ...                         # storage, scoring, exam builder, search, stats, SW update
+├── components/
+│   ├── ui/Diagram.tsx              # renders a Diagram to inline SVG
+│   └── ...                         # UI primitives, layout, question renderer
+├── pages/                          # one file per route, course resolved from :courseId
 └── styles/                         # design tokens + component CSS
 ```
 
@@ -180,19 +231,26 @@ Lesson prose supports two inline conventions, rendered by `src/components/ui/Ric
 
 ### Adding a lesson
 
-1. Create `src/content/ckad/topics/<domain>/<lesson-id>.ts` exporting a `Topic`.
+1. Create `src/content/<course>/topics/<domain>/<lesson-id>.ts` exporting a `Topic`.
 2. Add it to that domain's `index.ts` barrel and to the array in `topics/index.ts`.
-3. Run `npm test` — the content tests check that every required section is filled in, that cross-references resolve, that YAML samples use two-space indentation and a known `apiVersion`, and that there is no placeholder text.
+3. Give it at least one diagram — `src/content/courses.test.ts` requires one, and the diagram tests also enforce the renderer's limits (3–7 flow nodes, 2–4 sequence participants, containment no deeper than four levels, no markdown markers, and a caption on every diagram).
+4. Run `npm test` — the content tests check that every required section is filled in, that cross-references resolve, that ids are globally unique across courses, that YAML samples use two-space indentation and a known `apiVersion`, and that there is no placeholder text.
 
 ### Adding another DevOps course
 
 The content model is course-agnostic, and the app reads everything from the registry in `src/content/courses.ts`.
 
-1. Create `src/content/<course-id>/` with the same shape as `ckad/`: `domains.ts`, `topics/`, `questions/`, `commands.ts` and an `index.ts` exporting a `Course`.
-2. Add that `Course` to the `courses` array in `src/content/courses.ts`, and remove it from `plannedCourses` if it is listed there.
-3. Add routes for it in `src/App.tsx`, mirroring the `/ckad/...` block. Routes are namespaced by course id, so nothing existing needs to change.
+Adding the Terraform course required **no UI changes at all** — only content plus one line in the registry. That is the intended path for a third.
 
-The home page already renders every entry in the registry, including the "planned" placeholders shown as coming soon.
+1. Create `src/content/<course-id>/` with the same shape as `ckad/` and `terraform/`: `domains.ts`, `topics/`, `questions/`, `commands.ts` and an `index.ts` exporting a `Course`.
+2. Set `route: '/<course-id>'` — it must be exactly `/` plus the `id`, because the router resolves a course from the first path segment. A test enforces this.
+3. Add that `Course` to the `courses` array in `src/content/courses.ts`, and remove it from `plannedCourses` if it is listed there.
+4. Fill in `copy` (the dashboard wording) and `sources`. If the vendor publishes no per-objective weighting, set `officialWeights: false` and write a `note` — the UI then labels the figures as the app's own, and a test refuses to let an unweighted course claim a percentage.
+5. Split its chunk in `vite.config.ts` `manualChunks`, so editing one course's content does not invalidate another's cached bundle.
+
+Every page resolves its course from the `:courseId` route segment via `src/lib/use-course.ts`, so routes, navigation, the sidebar, search, practice, mock exams and the command reference all work for a new course without being touched. The home page and the progress page aggregate across the whole registry automatically.
+
+If a new course's objects are not Kubernetes-shaped, note that `KeyObject.apiVersion` is optional and `CodeLanguage` can be extended — HCL support is a 60-line local `highlight.js` definition in `src/lib/hcl-language.ts`, added because highlight.js does not ship one.
 
 ---
 
@@ -214,9 +272,20 @@ The suite covers:
 - **Search** — index construction, AND semantics, ranking, and each filter
 - **Export/import** — round trip, merge versus replace, confirmation flow, and rejection of an unrelated JSON file
 - **PWA update behaviour** — the update policy (visibility- and interval-triggered checks, offline and hidden-tab skipping) and the update prompt itself
-- **Content integrity** — 44 assertions over the lessons, questions and command reference
+- **Content integrity** — assertions over the lessons, questions and command reference, run over **every** course: globally unique ids, resolving cross-references, complete lesson sections, no placeholder text, blueprint weights that sum to 100 with enough questions to fill each share, and an explanatory note wherever a weighting is not official
+- **Diagram geometry** — the pure layout functions: word wrapping (including hard-splitting an over-long token), boxes tall enough for their content, children strictly inside parents, ordered sequence messages, no overlaps, and the text version covering every node
+- **Diagram rendering** — kind labels, captions, the text-version disclosure, `aria-hidden` on the SVG, unique marker ids per instance, and one lifeline per sequence participant
+- **HCL highlighting** — the hand-written `highlight.js` definition, pinning each token class the stylesheet colours, plus HTML escaping so a sample can never inject markup
+- **Exam generation** — both courses: full-length papers honouring the blueprint, determinism for a given seed, 100% and 0% scoring paths, and per-domain drills
 
-The layout, console cleanliness and responsive behaviour were additionally verified by driving headless Chrome over every route at four viewport widths (375, 393, 820 and 1440 CSS pixels): no console errors or warnings, no page errors, no failed requests, no horizontal page scrolling, body text at 16px or larger, form controls at 16px so iOS Safari does not zoom on focus, comfortable touch targets, and exactly one `<h1>` and one `<main>` landmark per page. That verification used a throwaway script outside the repository, so it adds no dependency here.
+The layout, console cleanliness and responsive behaviour were additionally verified by driving headless Chrome over every route at several viewport widths: no console errors or warnings, no page errors, no failed requests, no horizontal page scrolling, body text at 16px or larger, form controls at 16px so iOS Safari does not zoom on focus, comfortable touch targets, and exactly one `<h1>` and one `<main>` landmark per page.
+
+Two checks that only a real browser can make were run across **all 91 lessons** in both courses and in both themes:
+
+- **No diagram text escapes its box.** Every `<text>` node's measured bounding box is compared against its SVG `viewBox`. This caught a real class of bug: the character-width constants used for wrapping were too small, so labels overflowed by up to 30px. They were re-derived from 365 measured labels rather than guessed again.
+- **No literal markdown markers in prose.** Any `` `code` `` or `**bold**` still visible outside a code block means a field is being rendered without `RichText`. This caught three: code-sample explanations, related-topic one-liners, and the home page's daily suggestion.
+
+That verification used a throwaway script outside the repository, so it adds no dependency here.
 
 ---
 
@@ -226,7 +295,8 @@ The layout, console cleanliness and responsive behaviour were additionally verif
 - **16px minimum body text**, and 16px form controls, because anything smaller makes iOS Safari zoom when a field gains focus.
 - **Light and dark themes**, following the device by default with an in-app override that persists. Dark is defined twice — once for `prefers-color-scheme` and once for the explicit `[data-theme]` attribute — so the toggle wins in both directions.
 - **Collapsible lesson sections** use native `<details>`, so they are keyboard accessible, work with in-page find, and need no JavaScript.
-- **Syntax highlighting** uses `highlight.js` with only YAML, bash, JSON and Dockerfile registered, themed with the same CSS custom properties as the rest of the app so it is readable in both themes.
+- **Syntax highlighting** uses `highlight.js` with only YAML, bash, JSON, Dockerfile and HCL registered, themed with the same CSS custom properties as the rest of the app so it is readable in both themes. HCL is a local definition, because highlight.js does not ship one and pulling in a second highlighting library for one language would cost far more than 60 lines.
+- **Diagrams are inline SVG coloured from the design tokens**, so they follow the theme with no second set of assets, and they carry a text version for screen readers. A diagram wider than its column scrolls inside its own container — measured with a `ResizeObserver` rather than guessed from a breakpoint, because how much room a diagram gets depends on the sidebar as well as the viewport — and the page itself never scrolls sideways.
 - **Code blocks scroll horizontally inside themselves** and the page never does. Long Kubernetes identifiers in prose wrap rather than overflowing.
 - **Copy buttons** on every code sample and command, with a `navigator.clipboard` path and a legacy fallback for non-secure origins.
 - **Keyboard and screen reader**: a skip link, semantic landmarks, labelled form controls, `aria-pressed` on filter chips, `aria-current` on the active navigation item and question, a `role="timer"` for the exam clock, and `prefers-reduced-motion` respected.
@@ -236,13 +306,14 @@ The layout, console cleanliness and responsive behaviour were additionally verif
 ## Known limitations
 
 - **Mock exams cannot fully auto-grade performance-based tasks.** The real CKAD runs in a live cluster; this app has no cluster. Multiple-choice and command questions are auto-scored, and lab tasks are scored from a checkpoint list you confirm after submitting. That is honest but it depends on you being honest with yourself.
-- **The content chunk is large** (about 1.4 MB, 380 KB gzipped) because 50 full lessons ship as one module. That is deliberate for an offline-first app — the service worker precaches everything on first visit — and the framework and app-shell chunks are split out so first paint does not wait on it. Splitting content per domain behind dynamic imports would reduce the initial download and is the obvious next optimisation.
+- **The content chunks are large.** CKAD is about 1.45 MB (400 KB gzipped) and Terraform about 890 KB (250 KB gzipped), for a total precache of roughly 2.7 MB. That is the deliberate cost of every lesson being available offline — the service worker precaches everything on first visit. The chunks are split per course, so editing a CKAD lesson does not invalidate the cached Terraform bundle, and the framework and app-shell chunks are separate. Measured on a phone-sized viewport with a 4× CPU throttle over simulated 4G, first contentful paint is about **2.1 s**; after the first visit the service worker serves from cache. Both course bundles are nonetheless in the critical path, because the home page reads lesson counts and progress from them. The next optimisation is to split course **metadata** from course **content** and lazy-load the content per route — that is a real refactor rather than a config change, so it has not been done.
 - **Progress is per browser.** There is no account, so it does not follow you between devices or between Safari and Chrome on the same phone. Use export/import to move it.
-- **Labs need your own cluster.** kind, minikube or k3d all work. A few labs need extras and say so: metrics-server for `kubectl top`, a policy-enforcing CNI such as Calico for the NetworkPolicy lab, and an ingress controller for the Ingress lab.
-- **The curriculum moves.** Content was verified against CKAD_Curriculum_v1.35 / Kubernetes v1.35 on 2026-09-03. Re-check the official sources before your exam.
+- **Labs need your own tooling.** The CKAD labs need a cluster — kind, minikube or k3d all work — and a few need extras and say so: metrics-server for `kubectl top`, a policy-enforcing CNI such as Calico for the NetworkPolicy lab, and an ingress controller for the Ingress lab. The Terraform labs are deliberately built on the credential-free `local`, `random`, `time` and `null` providers, so objectives 1 to 7 can be practised with **no cloud account at all**. Only objective 8 needs an HCP Terraform account, and the free tier is sufficient.
+- **The curriculum moves.** CKAD content was verified against CKAD_Curriculum_v1.35 / Kubernetes v1.35 on 2026-09-03; Terraform content against the published 004 exam content list on 2026-09-04. Re-check the official sources before your exam.
+- **The Terraform mock-exam figures are the app's own.** HashiCorp publishes no question count, pass mark or per-objective weighting, so the 25-question papers, the 70% target and the domain weights are study aids derived from sub-objective counts. The app labels them as such wherever they appear.
 
 ---
 
 ## Licence and attribution
 
-The learning content in this repository is original material written for this app. Kubernetes, CKAD, CNCF and the Linux Foundation are trademarks of their respective owners; this project is independent of all of them. Documentation links point only to official Kubernetes, CNCF, Helm and Linux Foundation pages.
+The learning content in this repository is original material written for this app. Kubernetes, CKAD, CNCF, the Linux Foundation, Terraform, HCP Terraform and HashiCorp are trademarks of their respective owners; this project is independent of all of them. Documentation links point only to official Kubernetes, CNCF, Helm, Linux Foundation and HashiCorp pages.

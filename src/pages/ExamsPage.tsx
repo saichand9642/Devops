@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
-import { domainById, weightedDomainIds } from '../content/ckad/domains'
-import { questionsForDomain } from '../content/ckad/questions'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { useProgress } from '../lib/use-progress'
 import { Badge } from '../components/ui/Badge'
 import { EmptyState } from '../components/ui/StateBlock'
@@ -14,26 +14,33 @@ const presets = [
 ] as const
 
 export function ExamsPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <ExamsView catalog={catalog} />
+}
+
+function ExamsView({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const navigate = useNavigate()
   const { state, deleteExamAttempt } = useProgress()
-  const blueprint = ckadCourse.examBlueprint
+  const blueprint = course.examBlueprint
 
   const [minutes, setMinutes] = useState(blueprint.defaultMinutes)
   const [count, setCount] = useState(blueprint.questionCount)
 
-  const attempts = state.exams.filter((attempt) => attempt.courseId === ckadCourse.id)
+  const attempts = state.exams.filter((attempt) => attempt.courseId === course.id)
   const best = attempts.reduce((max, attempt) => Math.max(max, attempt.scorePercent), 0)
 
-  const available = weightedDomainIds.map((id) => ({
-    domain: domainById.get(id),
-    count: questionsForDomain(id).length,
+  const available = catalog.weightedDomainIds.map((id) => ({
+    domain: catalog.domainById.get(id),
+    count: catalog.questionsForDomain(id).length,
     weight: blueprint.weights[id],
   }))
   const poolSize = available.reduce((sum, entry) => sum + entry.count, 0)
 
   const start = () => {
     const seed = Date.now() % 2147483647
-    navigate(`${ckadCourse.route}/exams/run?minutes=${minutes}&count=${count}&seed=${seed}`)
+    navigate(`${course.route}/exams/run?minutes=${minutes}&count=${count}&seed=${seed}`)
   }
 
   return (
@@ -42,7 +49,7 @@ export function ExamsPage() {
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span aria-hidden="true">/</span>
-          <Link to={ckadCourse.route}>CKAD</Link>
+          <Link to={course.route}>{course.examCode}</Link>
           <span aria-hidden="true">/</span>
           <span>Mock exams</span>
         </nav>
@@ -222,7 +229,7 @@ export function ExamsPage() {
                 </span>
                 <Link
                   className="btn btn--secondary btn--sm"
-                  to={`${ckadCourse.route}/exams/attempts/${attempt.id}`}
+                  to={`${course.route}/exams/attempts/${attempt.id}`}
                 >
                   Review
                 </Link>

@@ -31,6 +31,68 @@ export const persistentVolumeClaims: Topic = {
     'Resizing: if the StorageClass has `allowVolumeExpansion: true`, you can increase `spec.resources.requests.storage` on the PVC. You can never decrease it.',
     'A PVC in use by a Pod cannot be deleted immediately - it gets a `kubernetes.io/pvc-protection` finalizer and stays Terminating until the Pod goes away.',
   ],
+  diagrams: [
+    {
+      kind: 'sequence',
+      title: 'How a PVC gets storage',
+      caption:
+        'A Pod with an unbound PVC stays Pending forever. Always check the PVC before blaming the Pod.',
+      participants: [
+        { id: 'you', label: 'You' },
+        { id: 'pvc', label: 'PVC' },
+        { id: 'sc', label: 'StorageClass' },
+        { id: 'pv', label: 'PV' },
+      ],
+      messages: [
+        { from: 'you', to: 'pvc', label: 'create PVC: 1Gi, RWO' },
+        { from: 'pvc', to: 'sc', label: 'which provisioner?' },
+        { from: 'sc', to: 'pv', label: 'provision a matching volume' },
+        { from: 'pv', to: 'pvc', label: 'PVC status becomes Bound', kind: 'return' },
+        { from: 'you', to: 'pvc', label: 'Pod mounts the claim by name' },
+        { from: 'pvc', to: 'you', label: 'kubelet attaches and mounts it', kind: 'return' },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'Why a PVC stays Pending',
+      caption:
+        'Work down this list with kubectl describe pvc. The Events section names the reason directly.',
+      nodes: [
+        {
+          label: 'PVC created, status Pending',
+          tone: 'warning',
+        },
+        {
+          label: 'Is there a StorageClass?',
+          detail: 'kubectl get sc - one should be marked (default)',
+          branch: {
+            label: 'No default class',
+            detail: 'Nothing provisions; set storageClassName explicitly',
+          },
+        },
+        {
+          label: 'Can the class satisfy the request?',
+          detail: 'Size and accessModes must both be possible',
+          arrowLabel: 'class exists',
+          branch: {
+            label: 'RWX asked of a RWO-only class',
+            detail: 'No PV will ever match; change the access mode',
+          },
+        },
+        {
+          label: 'Is binding waiting for a Pod?',
+          detail: 'volumeBindingMode: WaitForFirstConsumer',
+          arrowLabel: 'request is valid',
+          branch: {
+            label: 'Normal, not a fault',
+            detail: 'It binds as soon as a Pod that uses it is scheduled',
+            tone: 'accent',
+          },
+        },
+        { label: 'Bound', detail: 'The Pod can now start', tone: 'success' },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'PersistentVolumeClaim',

@@ -29,6 +29,72 @@ export const coreObjects: Topic = {
     'Containers inside one Pod share the network and IPC namespaces but have separate filesystems, unless you explicitly mount the same volume into both.',
     'Names must be a valid DNS label for most objects: lowercase letters, digits and `-`, up to 63 characters, starting and ending alphanumeric. `My_Pod` is rejected by the API server.',
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'Every object has the same four top-level fields',
+      caption:
+        'Learn this shape once and every manifest you ever write becomes predictable, whatever the kind.',
+      root: {
+        label: 'Any Kubernetes object',
+        children: [
+          {
+            label: 'apiVersion',
+            detail: 'Which API group and version, e.g. apps/v1',
+            tone: 'accent',
+          },
+          { label: 'kind', detail: 'Which type, e.g. Deployment', tone: 'accent' },
+          {
+            label: 'metadata',
+            detail: 'Identity: name, namespace, labels, annotations',
+            children: [
+              { label: 'name', detail: 'Unique within the namespace and kind' },
+              { label: 'labels', detail: 'How selectors find this object' },
+            ],
+          },
+          {
+            label: 'spec',
+            detail: 'What YOU want. The only part you write.',
+            tone: 'success',
+          },
+          {
+            label: 'status',
+            detail: 'What the cluster observes. Never write this.',
+            tone: 'muted',
+          },
+        ],
+      },
+    },
+    {
+      kind: 'decision',
+      title: 'Which object do I actually need?',
+      caption:
+        'Almost every CKAD task starts here. Pick the wrong kind and the rest of the task cannot score.',
+      question: 'What are you trying to do?',
+      branches: [
+        {
+          condition: 'run a stateless app and update it safely',
+          result: 'Deployment',
+          detail: 'Owns a ReplicaSet, which owns the Pods',
+        },
+        {
+          condition: 'run work that finishes',
+          result: 'Job, or CronJob on a schedule',
+          detail: 'restartPolicy must be Never or OnFailure',
+        },
+        {
+          condition: 'give the app a stable address',
+          result: 'Service',
+          detail: 'Selects Pods by label, not by name',
+        },
+        {
+          condition: 'supply configuration or credentials',
+          result: 'ConfigMap or Secret',
+          detail: 'Inject as env vars or mount as a volume',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Namespace',

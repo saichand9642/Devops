@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
-import { ckadDomains } from '../content/ckad/domains'
-import { questionsForDomain } from '../content/ckad/questions'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { useProgress } from '../lib/use-progress'
 import { practiceStats } from '../lib/stats'
 import { percent } from '../lib/scoring'
@@ -9,11 +9,18 @@ import { ProgressBar } from '../components/ui/ProgressBar'
 import { Badge } from '../components/ui/Badge'
 
 export function PracticePage() {
-  const { state } = useProgress()
-  const overall = practiceStats(ckadCourse, state)
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <PracticeView catalog={catalog} />
+}
 
-  const perDomain = ckadDomains.map((domain) => {
-    const questions = questionsForDomain(domain.id)
+function PracticeView({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
+  const { state } = useProgress()
+  const overall = practiceStats(course, state)
+
+  const perDomain = course.domains.map((domain) => {
+    const questions = catalog.questionsForDomain(domain.id)
     let correct = 0
     let incorrect = 0
     for (const question of questions) {
@@ -37,7 +44,7 @@ export function PracticePage() {
   const categories = ['concept', 'command', 'yaml', 'troubleshoot', 'lab'] as const
   const categoryCounts = categories.map((category) => ({
     category,
-    count: ckadCourse.questions.filter((question) => question.category === category).length,
+    count: course.questions.filter((question) => question.category === category).length,
   }))
 
   return (
@@ -46,13 +53,13 @@ export function PracticePage() {
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span aria-hidden="true">/</span>
-          <Link to={ckadCourse.route}>CKAD</Link>
+          <Link to={course.route}>{course.examCode}</Link>
           <span aria-hidden="true">/</span>
           <span>Practice</span>
         </nav>
         <h1>Practice questions</h1>
         <p className="muted">
-          {ckadCourse.questions.length} original questions across five question types: concepts,
+          {course.questions.length} original questions across five question types: concepts,
           commands, YAML correction, troubleshooting scenarios and hands-on labs. Answers reveal
           immediately with an explanation, and anything you get wrong is queued for retry.
         </p>
@@ -91,7 +98,7 @@ export function PracticePage() {
         </div>
         {overall.needsReview.length > 0 && (
           <div className="row">
-            <Link className="btn" to={`${ckadCourse.route}/practice/review`}>
+            <Link className="btn" to={`${course.route}/practice/review`}>
               Retry {overall.needsReview.length} incorrect question
               {overall.needsReview.length === 1 ? '' : 's'}
             </Link>
@@ -106,7 +113,7 @@ export function PracticePage() {
             <Link
               className="card card--interactive domain-card stack-sm"
               key={entry.domain.id}
-              to={`${ckadCourse.route}/practice/${entry.domain.id}`}
+              to={`${course.route}/practice/${entry.domain.id}`}
               style={{ ['--domain-accent' as string]: `var(--accent-${entry.domain.accent})` }}
             >
               <div className="row">
@@ -140,14 +147,14 @@ export function PracticePage() {
       <section className="stack" aria-labelledby="also">
         <h2 id="also">Also useful</h2>
         <div className="card-grid card-grid--2">
-          <Link className="card card--interactive stack-sm" to={`${ckadCourse.route}/exams`}>
+          <Link className="card card--interactive stack-sm" to={`${course.route}/exams`}>
             <strong className="card__title">⏱️ Mock exams</strong>
             <p className="subtle" style={{ margin: 0 }}>
               Practice is untimed and reveals answers immediately. A mock exam hides everything
               until you submit and weights the questions to the official domain percentages.
             </p>
           </Link>
-          <Link className="card card--interactive stack-sm" to={`${ckadCourse.route}/commands`}>
+          <Link className="card card--interactive stack-sm" to={`${course.route}/commands`}>
             <strong className="card__title">⌨️ Command reference</strong>
             <p className="subtle" style={{ margin: 0 }}>
               Look up the command a question expects, with copy buttons.

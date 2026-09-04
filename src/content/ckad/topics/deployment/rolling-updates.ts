@@ -31,6 +31,75 @@ export const rollingUpdates: Topic = {
     '`kubectl rollout undo` swaps the ReplicaSet scale-ups around: the previous ReplicaSet scales back up and the current one down. This creates a *new* revision number rather than deleting the bad one.',
     '`kubectl rollout pause` stops the controller acting on further template changes, so you can batch several edits and then `resume` for a single rollout. `kubectl rollout restart` re-creates all Pods with the same template by stamping a new annotation on it.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'One step of a rolling update',
+      caption:
+        'maxSurge is how far above the replica count you may go. maxUnavailable is how far below. Both default to 25%.',
+      nodes: [
+        {
+          label: 'replicas: 4, all on v1',
+          detail: 'Available: 4 of 4',
+        },
+        {
+          label: 'Create surge Pods on v2',
+          detail: 'maxSurge: 1 allows a fifth Pod',
+          tone: 'accent',
+          arrowLabel: 'template changed',
+        },
+        {
+          label: 'Wait for the new Pod to be Ready',
+          detail: 'readinessProbe decides, not Running',
+          arrowLabel: 'this is the gate',
+          branch: {
+            label: 'Never becomes Ready',
+            detail: 'Rollout stalls here; old Pods keep serving',
+          },
+        },
+        {
+          label: 'Terminate one v1 Pod',
+          detail: 'Never dropping below replicas - maxUnavailable',
+          arrowLabel: 'new Pod is Ready',
+        },
+        {
+          label: 'Repeat until all 4 are v2',
+          detail: 'kubectl rollout status blocks until then',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'What do I do with a stuck rollout?',
+      caption:
+        'Undo restores the previous ReplicaSet, which is still there at scale 0. That is why rollback is instant.',
+      question: 'What does kubectl rollout status say?',
+      branches: [
+        {
+          condition: 'it hangs with "waiting for rollout to finish"',
+          result: 'Describe the new Pod',
+          detail: 'Almost always a failing readinessProbe or a bad image',
+          tone: 'accent',
+        },
+        {
+          condition: 'the new version is broken and you must recover now',
+          result: 'kubectl rollout undo',
+          detail: 'Scales the previous ReplicaSet back up',
+        },
+        {
+          condition: 'you need to stop mid-rollout to investigate',
+          result: 'kubectl rollout pause',
+          detail: 'Resume with kubectl rollout resume',
+        },
+        {
+          condition: 'you must go back several versions',
+          result: 'undo --to-revision=N',
+          detail: 'List them with kubectl rollout history',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Deployment',

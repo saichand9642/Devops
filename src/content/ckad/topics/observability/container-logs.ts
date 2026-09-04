@@ -31,6 +31,43 @@ export const containerLogs: Topic = {
     'Node-level log rotation is configured by the cluster, typically 10Mi per file with a few files retained. Long-running Pods therefore do not keep an unbounded history, which is why real clusters ship logs off-node.',
     "A terminated Pod's logs are readable until the Pod object is deleted. That is why `restartPolicy: Never` (which leaves failed Pods in place) is better for debugging than `OnFailure`.",
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Where kubectl logs gets its text',
+      caption:
+        'Only stdout and stderr reach kubectl logs. An app that writes to a file inside the container is invisible to it.',
+      nodes: [
+        {
+          label: 'App writes to stdout and stderr',
+          detail: 'Anything else is not a container log',
+          tone: 'accent',
+          branch: {
+            label: 'App writes to /var/log/app.log',
+            detail: 'kubectl logs shows nothing - use exec cat, or a sidecar',
+          },
+        },
+        {
+          label: 'The runtime captures both streams',
+          detail: 'containerd writes them to the node filesystem',
+          arrowLabel: 'per container',
+        },
+        {
+          label: 'kubelet exposes them through the API',
+          detail: 'One current log, plus one rotated previous log',
+        },
+        {
+          label: 'kubectl logs reads them',
+          detail: '-c for a container, --previous for the crashed one, -f to follow',
+          tone: 'success',
+          branch: {
+            label: 'Pod was deleted',
+            detail: 'The logs are gone with it. Nothing recovers them.',
+          },
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

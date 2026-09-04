@@ -1,8 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { primaryNav } from './navigation'
+import { primaryNavFor } from './navigation'
+import { useActiveCourseIndex } from '../../lib/use-course'
 
 /** Mobile tab bar. Sits above the iOS home indicator via safe-area padding. */
 export function BottomNav() {
+  const { course } = useActiveCourseIndex()
+  const primaryNav = primaryNavFor(course)
+
   return (
     <nav className="bottom-nav" aria-label="Primary">
       {primaryNav.map((item) => (

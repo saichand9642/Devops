@@ -28,6 +28,64 @@ export const contextsAndNamespaces: Topic = {
     'A namespace set on the context is a client-side default only. Objects whose manifest carries `metadata.namespace` always go where the manifest says, and `-n` on the command line overrides the context default.',
     "If a manifest's `metadata.namespace` conflicts with `-n`, kubectl refuses the apply rather than guessing.",
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'What a kubeconfig context actually points at',
+      caption:
+        'A context is just a saved triple. Switching context changes all three at once, which is why one wrong switch can send a command to the wrong cluster.',
+      root: {
+        label: 'kubeconfig',
+        detail: 'Usually ~/.kube/config',
+        children: [
+          {
+            label: 'current-context',
+            detail: 'The name of the context in use right now',
+            tone: 'accent',
+          },
+          {
+            label: 'context: dev',
+            detail: 'A named triple',
+            children: [
+              { label: 'cluster', detail: 'Which API server URL' },
+              { label: 'user', detail: 'Which credentials' },
+              { label: 'namespace', detail: 'Default when you omit -n' },
+            ],
+          },
+          { label: 'context: prod', detail: 'Another triple, same shape', tone: 'muted' },
+        ],
+      },
+    },
+    {
+      kind: 'flow',
+      title: 'Which namespace does a command hit?',
+      caption:
+        'Most "the object is missing" moments in the exam are really "I looked in the wrong namespace".',
+      nodes: [
+        { label: 'You run a kubectl command' },
+        {
+          label: 'Did you pass -n or --namespace?',
+          detail: 'An explicit flag always wins',
+          tone: 'accent',
+        },
+        {
+          label: 'Does the manifest set metadata.namespace?',
+          detail: 'For apply, the file beats the flag-free default',
+          arrowLabel: 'if no flag',
+        },
+        {
+          label: 'Falls back to the context namespace',
+          detail: 'kubectl config view --minify shows it',
+          arrowLabel: 'if neither',
+        },
+        {
+          label: 'Otherwise: default',
+          detail: 'The literal namespace called "default"',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Context (kubeconfig)',

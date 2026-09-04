@@ -29,6 +29,68 @@ export const commandsAndArgs: Topic = {
     '`postStart` runs asynchronously with the container entrypoint - there is no ordering guarantee, and a failing `postStart` kills the container.',
     '`preStop` runs *before* SIGTERM and blocks the shutdown sequence until it finishes or the grace period expires. Its duration is counted inside `terminationGracePeriodSeconds`, so allow room for both.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'What overrides what in a container image',
+      caption:
+        'command overrides ENTRYPOINT. args overrides CMD. Getting this backwards is one of the most common CKAD mistakes.',
+      question: 'Which fields did you set in the Pod spec?',
+      branches: [
+        {
+          condition: 'neither command nor args',
+          result: 'Image ENTRYPOINT + image CMD',
+          detail: 'Exactly what the image author intended',
+        },
+        {
+          condition: 'args only',
+          result: 'Image ENTRYPOINT + your args',
+          detail: 'The usual way to pass flags to a normal image',
+          tone: 'accent',
+        },
+        {
+          condition: 'command only',
+          result: 'Your command, image CMD DISCARDED',
+          detail: 'A frequent surprise: the default arguments vanish',
+          tone: 'warning',
+        },
+        {
+          condition: 'both command and args',
+          result: 'Your command + your args',
+          detail: 'The image ENTRYPOINT and CMD are both ignored',
+        },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'Why a shell is sometimes required',
+      caption:
+        'Kubernetes does not run a shell for you, so $(VAR), pipes and && only work if you invoke one yourself.',
+      nodes: [
+        {
+          label: 'command: ["echo", "$HOME"]',
+          detail: 'No shell involved',
+          tone: 'accent',
+        },
+        {
+          label: 'Container prints the literal $HOME',
+          detail: 'Nothing expanded it',
+          arrowLabel: 'exec, not shell',
+          tone: 'warning',
+        },
+        {
+          label: 'Wrap it in a shell instead',
+          detail: 'command: ["sh", "-c", "echo $HOME && sleep 3600"]',
+          arrowLabel: 'fix',
+        },
+        {
+          label: 'Now variables, pipes and && all work',
+          detail: 'The shell is PID 1 and does the expanding',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

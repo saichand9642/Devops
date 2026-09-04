@@ -136,11 +136,21 @@ describe('navigation', () => {
     await screen.findByRole('heading', { level: 1, name: /probes/i })
 
     // Sidebar curriculum links point at dashboard sections, so none of them -
-    // and not the CKAD course link either - should claim to be current here.
+    // and not the CKAD course link either - should claim to be the current
+    // PAGE here.
     const current = screen
       .getAllByRole('link')
       .filter((link) => link.getAttribute('aria-current') === 'page')
     expect(current).toHaveLength(0)
+
+    // The course switcher does mark which course you are inside, but as a
+    // location rather than a page.
+    const inCourse = screen
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('aria-current') === 'location')
+      .map((link) => link.textContent)
+    expect(inCourse.length).toBeGreaterThan(0)
+    expect(inCourse.every((text) => /CKAD/i.test(text ?? ''))).toBe(true)
 
     // On the dashboard itself, the CKAD course link is current.
     window.history.pushState({}, '', '/ckad')

@@ -41,6 +41,70 @@ export const resourceRequirements: Topic = {
     'A LimitRange in the namespace can supply defaults for containers that specify nothing, and can enforce minimums, maximums and a maximum limit-to-request ratio. A ResourceQuota can require that requests and limits are set at all.',
     'Guaranteed QoS additionally gets integer CPU pinning on nodes configured with the static CPU manager policy - relevant for latency-sensitive workloads, though not a CKAD topic.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Requests schedule, limits enforce',
+      caption:
+        'This one sentence answers most resource questions. Requests are a promise used at scheduling time; limits are a ceiling enforced at runtime.',
+      nodes: [
+        {
+          label: 'You set requests and limits',
+          detail: 'resources.requests and resources.limits per container',
+        },
+        {
+          label: 'Scheduler adds up the REQUESTS',
+          detail: 'Finds a node with that much unreserved capacity',
+          tone: 'accent',
+          arrowLabel: 'requests only',
+          branch: {
+            label: 'No node has room',
+            detail: 'Pod stays Pending: Insufficient cpu or memory',
+          },
+        },
+        {
+          label: 'Container starts on that node',
+          detail: 'Requests are now just a reservation',
+        },
+        {
+          label: 'CPU above the limit is throttled',
+          detail: 'The app slows down but keeps running',
+          arrowLabel: 'CPU is compressible',
+        },
+        {
+          label: 'Memory above the limit is killed',
+          detail: 'OOMKilled, exit code 137, then restarted',
+          tone: 'warning',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'What QoS class did you just create?',
+      caption:
+        'QoS decides who gets evicted first when a node runs out of memory. You never set it directly - it follows from your numbers.',
+      question: 'How do requests compare with limits?',
+      branches: [
+        {
+          condition: 'set, equal, on every container',
+          result: 'Guaranteed',
+          detail: 'Evicted last. What you want for important workloads.',
+          tone: 'accent',
+        },
+        {
+          condition: 'set, but requests below limits',
+          result: 'Burstable',
+          detail: 'Evicted after BestEffort. The common case.',
+        },
+        {
+          condition: 'neither set anywhere',
+          result: 'BestEffort',
+          detail: 'Evicted first, and cannot be scheduled predictably',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

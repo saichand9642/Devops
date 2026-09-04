@@ -101,7 +101,12 @@ export interface Readiness {
  * lesson coverage, practice accuracy, and the best recent mock-exam score.
  *
  * Deliberately conservative: you cannot look ready without having sat a full
- * mock exam, because time pressure is the part of CKAD that catches people out.
+ * mock exam, because time pressure is the part of these exams that catches
+ * people out.
+ *
+ * Courses whose vendor publishes no per-objective weighting have no weighted
+ * domains at all, so both this function and `dailySuggestion` fall back to
+ * treating every domain equally.
  */
 export function readinessFor(course: Course, state: ProgressState): Readiness {
   const weighted = course.topics.filter((topic) => {
@@ -229,9 +234,11 @@ export function dailySuggestion(course: Course, state: ProgressState): DailySugg
   const notStarted = ordered.find((topic) => topicStatus(state, topic.id) === 'not-started')
   const practice = practiceStats(course, state)
 
-  const weakestDomain = domainStats(course, state)
-    .filter((entry) => entry.domain.examWeight !== null && entry.percent < 100)
-    .sort((a, b) => a.percent - b.percent)[0]
+  const incomplete = domainStats(course, state).filter((entry) => entry.percent < 100)
+  const weighted = incomplete.filter((entry) => entry.domain.examWeight !== null)
+  const weakestDomain = (weighted.length > 0 ? weighted : incomplete).sort(
+    (a, b) => a.percent - b.percent,
+  )[0]
 
   if (inProgress) {
     return {

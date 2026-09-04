@@ -10,7 +10,7 @@
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced'
 
 /** Language used for syntax highlighting of a code sample. */
-export type CodeLanguage = 'yaml' | 'bash' | 'json' | 'dockerfile' | 'text'
+export type CodeLanguage = 'yaml' | 'bash' | 'json' | 'dockerfile' | 'hcl' | 'text'
 
 export interface CodeSample {
   title: string
@@ -42,7 +42,8 @@ export interface KeyField {
 
 export interface KeyObject {
   kind: string
-  apiVersion: string
+  /** Kubernetes apiVersion. Omitted by courses whose objects have no version. */
+  apiVersion?: string
   purpose: string
   fields: KeyField[]
 }
@@ -80,6 +81,91 @@ export interface RealWorldExample {
   code?: CodeSample[]
 }
 
+/* --------------------------------------------------------------- diagrams */
+
+/**
+ * Diagrams are authored as data, not as images or Mermaid source, and rendered
+ * to inline SVG at runtime. That keeps them searchable, theme-aware, offline
+ * (no diagram library to download), and it means a lesson can never ship a
+ * picture whose colours are unreadable in dark mode.
+ */
+export type DiagramTone = 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'muted'
+
+/** One box in a flow diagram. */
+export interface FlowNode {
+  label: string
+  detail?: string
+  tone?: DiagramTone
+  /** Label written beside the arrow that leads INTO this node. */
+  arrowLabel?: string
+  /** An off-ramp drawn to the side, e.g. what happens when a probe fails. */
+  branch?: { label: string; detail?: string; tone?: DiagramTone }
+}
+
+export interface SequenceParticipant {
+  id: string
+  label: string
+}
+
+export interface SequenceMessage {
+  from: string
+  to: string
+  label: string
+  /** `return` is drawn dashed - replies, watch events, status writes. */
+  kind?: 'call' | 'return'
+}
+
+/** A containment box. Children are drawn nested inside their parent. */
+export interface NestedBox {
+  label: string
+  detail?: string
+  tone?: DiagramTone
+  children?: NestedBox[]
+}
+
+export interface DecisionBranch {
+  /** The condition that selects this branch, e.g. "needs stable hostnames". */
+  condition: string
+  /** What you should do when the condition holds. */
+  result: string
+  detail?: string
+  tone?: DiagramTone
+}
+
+interface DiagramBase {
+  title: string
+  /** The one thing the learner should take away from the picture. */
+  caption?: string
+}
+
+/** An ordered pipeline: what happens, in order, with optional failure exits. */
+export interface FlowDiagram extends DiagramBase {
+  kind: 'flow'
+  nodes: FlowNode[]
+}
+
+/** Who talks to whom, in order - request paths and control loops. */
+export interface SequenceDiagram extends DiagramBase {
+  kind: 'sequence'
+  participants: SequenceParticipant[]
+  messages: SequenceMessage[]
+}
+
+/** What lives inside what - cluster/node/pod/container, owner chains. */
+export interface NestedDiagram extends DiagramBase {
+  kind: 'nested'
+  root: NestedBox
+}
+
+/** "Which one do I pick?" - a question with mutually exclusive answers. */
+export interface DecisionDiagram extends DiagramBase {
+  kind: 'decision'
+  question: string
+  branches: DecisionBranch[]
+}
+
+export type Diagram = FlowDiagram | SequenceDiagram | NestedDiagram | DecisionDiagram
+
 export interface Topic {
   id: string
   title: string
@@ -95,6 +181,8 @@ export interface Topic {
   explanation: string[]
   whyItMatters: string[]
   howItWorks: string[]
+  /** Flow diagrams that make the mechanism visual. */
+  diagrams?: Diagram[]
   keyObjects: KeyObject[]
   realWorldExample: RealWorldExample
   yamlExamples: CodeSample[]
@@ -125,6 +213,14 @@ export interface Domain {
    * weight of their own.
    */
   examWeight: number | null
+  /**
+   * What to show instead of a percentage when `examWeight` is null.
+   *
+   * HashiCorp publishes the Terraform objectives but no weighting, so those
+   * domains show "Objective 3" rather than a made-up percentage. CKAD's own
+   * supporting sections leave this unset and show "support".
+   */
+  weightLabel?: string
   description: string
   /** Competencies as published by the CNCF/Linux Foundation curriculum. */
   officialCompetencies: string[]
@@ -232,8 +328,20 @@ export interface ExamBlueprint {
   passingScore: number
   /** Number of questions in a generated full-length exam. */
   questionCount: number
-  /** Domain id -> percentage of the exam, matching the official weights. */
+  /** Domain id -> percentage of the exam. */
   weights: Record<string, number>
+  /**
+   * True when the certifying body publishes `weights` and `passingScore`.
+   *
+   * False when it does not - HashiCorp, for instance, publishes neither for
+   * the Terraform Associate exam. In that case these numbers are the app's own
+   * study targets, `note` must say so, and the UI shows that note wherever the
+   * figures appear. Presenting an invented weighting as official would be
+   * misleading.
+   */
+  officialWeights: boolean
+  /** Required when `officialWeights` is false. */
+  note?: string
 }
 
 export interface Course {
@@ -255,6 +363,26 @@ export interface Course {
   examBlueprint: ExamBlueprint
   /** Source-of-truth links shown in the app for verification. */
   sources: { title: string; url: string }[]
+  /**
+   * Course-specific dashboard copy.
+   *
+   * Kept as data because the wording differs per certification - which
+   * sections carry weight, who publishes the curriculum, and what the command
+   * reference actually covers. Hard-coding it in the page made the whole
+   * dashboard CKAD-only.
+   */
+  copy: CourseCopy
+}
+
+export interface CourseCopy {
+  /** How to work through the curriculum, one paragraph. */
+  studyPath: string
+  /** Where the domain names and weights come from, and when they were checked. */
+  provenance: string
+  /** What the command reference covers, e.g. "kubectl, Helm and Kustomize". */
+  commandReference: string
+  /** What a mock exam paper is weighted to. */
+  examWeighting: string
 }
 
 /**

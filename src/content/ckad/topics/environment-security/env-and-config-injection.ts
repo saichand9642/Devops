@@ -31,6 +31,37 @@ export const envAndConfigInjection: Topic = {
     'A `downwardAPI` volume projects the same information as files, and unlike env vars it *does* update when labels or annotations change.',
     'Legacy Service environment variables (`REDIS_SERVICE_HOST` and so on) are injected only for Services that already existed when the Pod started - which is why DNS, not env vars, is the correct way to find a Service.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Which injection field?',
+      caption: 'Four ways in, and the exam expects you to pick by intent rather than habit.',
+      question: 'Where does the value come from?',
+      branches: [
+        {
+          condition: 'a literal, fixed in the manifest',
+          result: 'env with value',
+          detail: 'env: - name: MODE  value: production',
+        },
+        {
+          condition: 'one key of a ConfigMap or Secret',
+          result: 'env with valueFrom',
+          detail: 'configMapKeyRef or secretKeyRef; lets you rename it',
+          tone: 'accent',
+        },
+        {
+          condition: 'every key of a ConfigMap or Secret',
+          result: 'envFrom',
+          detail: 'Names come straight from the keys',
+        },
+        {
+          condition: 'a fact about the Pod itself',
+          result: 'valueFrom fieldRef',
+          detail: 'metadata.name, status.podIP, or resourceFieldRef for limits',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

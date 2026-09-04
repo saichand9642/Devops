@@ -32,6 +32,63 @@ export const serviceTypes: Topic = {
     'LoadBalancer relies on a cloud controller manager (or MetalLB on bare metal) to populate `status.loadBalancer.ingress`. Without one the EXTERNAL-IP column stays `<pending>`.',
     'ExternalName produces only a DNS CNAME. It does no port mapping, no TLS, and no health checking, and it does not work for hostnames that need an HTTP Host header rewrite.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Which Service type?',
+      caption:
+        'Each type builds on the one above it. NodePort is a ClusterIP plus a node port; LoadBalancer is a NodePort plus an external IP.',
+      question: 'Who needs to reach this workload?',
+      branches: [
+        {
+          condition: 'only other Pods in the cluster',
+          result: 'ClusterIP',
+          detail: 'The default. An internal virtual IP and a DNS name.',
+          tone: 'accent',
+        },
+        {
+          condition: 'something outside, on a cluster node IP',
+          result: 'NodePort',
+          detail: 'Opens the same port 30000-32767 on every node',
+        },
+        {
+          condition: 'the internet, through a cloud load balancer',
+          result: 'LoadBalancer',
+          detail: 'Cloud-provider only; Pending forever on a local cluster',
+        },
+        {
+          condition: 'an external hostname, aliased inside the cluster',
+          result: 'ExternalName',
+          detail: 'Just a CNAME. No proxying, no selector, no endpoints.',
+        },
+      ],
+    },
+    {
+      kind: 'nested',
+      title: 'Each type includes the ones before it',
+      caption:
+        'This is why a LoadBalancer Service still has a ClusterIP, and why you can always reach it internally by DNS.',
+      root: {
+        label: 'type: LoadBalancer',
+        detail: 'External IP from the cloud provider',
+        children: [
+          {
+            label: 'type: NodePort',
+            detail: 'A high port on every node',
+            tone: 'accent',
+            children: [
+              {
+                label: 'type: ClusterIP',
+                detail: 'Virtual IP plus DNS, always present',
+                tone: 'success',
+                children: [{ label: 'Endpoints', detail: 'The IPs of Ready, matching Pods' }],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
   keyObjects: [
     {
       kind: 'Service',

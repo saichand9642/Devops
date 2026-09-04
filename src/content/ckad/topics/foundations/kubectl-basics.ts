@@ -28,6 +28,67 @@ export const kubectlBasics: Topic = {
     '`--dry-run=client` renders the object locally and never contacts the cluster for validation. `--dry-run=server` sends it to the API server, which runs full validation and admission, then discards it - use it when you want real validation.',
     'Deletion is asynchronous: the object gets a `deletionTimestamp` and terminates gracefully within `terminationGracePeriodSeconds` (30 by default). `--force --grace-period=0` skips that wait but can leave a container running - avoid it unless a task demands speed.',
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'The shape of every kubectl command',
+      caption:
+        'Once you see the five slots, unfamiliar commands stop being unfamiliar - they are the same slots with different values.',
+      root: {
+        label: 'kubectl <verb> <type> <name> <flags>',
+        children: [
+          {
+            label: 'verb',
+            detail: 'get, describe, create, apply, delete, logs, exec',
+            tone: 'accent',
+          },
+          {
+            label: 'type',
+            detail: 'pod, deploy, svc, cm - see kubectl api-resources',
+          },
+          { label: 'name', detail: 'Optional. Omit it to act on all of that type.' },
+          {
+            label: 'scope flags',
+            detail: '-n <namespace>, -A for every namespace',
+            tone: 'warning',
+          },
+          {
+            label: 'output flags',
+            detail: '-o yaml, -o wide, -o jsonpath=..., --show-labels',
+          },
+        ],
+      },
+    },
+    {
+      kind: 'flow',
+      title: 'What to reach for first',
+      caption:
+        'get to see it, describe to understand it, logs to hear from the app, explain to write the YAML.',
+      nodes: [
+        {
+          label: 'kubectl get',
+          detail: 'Is it there, and what state is it in?',
+          tone: 'accent',
+        },
+        {
+          label: 'kubectl describe',
+          detail: 'Why is it in that state? Events live here.',
+          arrowLabel: 'state looks wrong',
+        },
+        {
+          label: 'kubectl logs',
+          detail: 'What does the application itself say?',
+          arrowLabel: 'the object looks fine',
+        },
+        {
+          label: 'kubectl explain',
+          detail: 'Which field do I need in order to fix it?',
+          arrowLabel: 'now write the change',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Config (kubeconfig)',

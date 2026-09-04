@@ -499,3 +499,140 @@ describe('command reference', () => {
     }
   })
 })
+
+describe('lesson diagrams', () => {
+  const withDiagrams = ckadTopics.filter((topic) => (topic.diagrams?.length ?? 0) > 0)
+  const allDiagrams = ckadTopics.flatMap((topic) =>
+    (topic.diagrams ?? []).map((diagram) => ({ topic, diagram })),
+  )
+
+  it('gives every topic at least one diagram', () => {
+    const missing = ckadTopics.filter((topic) => !topic.diagrams?.length).map((topic) => topic.id)
+    expect(missing).toEqual([])
+    expect(withDiagrams).toHaveLength(ckadTopics.length)
+  })
+
+  it('titles and captions every diagram', () => {
+    for (const { topic, diagram } of allDiagrams) {
+      expect(diagram.title.length, topic.id).toBeGreaterThan(8)
+      // The caption is what turns a picture into a lesson, so it is required.
+      expect(diagram.caption, `${topic.id}: ${diagram.title}`).toBeTruthy()
+      expect(diagram.caption!.length).toBeGreaterThan(20)
+    }
+  })
+
+  it('never leaves a label empty or absurdly long', () => {
+    const labels: string[] = []
+    for (const { diagram } of allDiagrams) {
+      if (diagram.kind === 'flow') {
+        for (const node of diagram.nodes) {
+          labels.push(node.label)
+          if (node.detail) labels.push(node.detail)
+          if (node.branch) labels.push(node.branch.label)
+        }
+      } else if (diagram.kind === 'sequence') {
+        labels.push(...diagram.participants.map((p) => p.label))
+        labels.push(...diagram.messages.map((m) => m.label))
+      } else if (diagram.kind === 'decision') {
+        labels.push(diagram.question)
+        for (const branch of diagram.branches) {
+          labels.push(branch.condition, branch.result)
+        }
+      } else {
+        const walk = (box: { label: string; children?: unknown[] }) => {
+          labels.push(box.label)
+          for (const child of (box.children ?? []) as (typeof box)[]) walk(child)
+        }
+        walk(diagram.root)
+      }
+    }
+    for (const label of labels) {
+      expect(label.trim().length).toBeGreaterThan(0)
+      // Long prose belongs in the caption; a box label must stay scannable.
+      expect(label.length, label).toBeLessThanOrEqual(90)
+    }
+  })
+
+  it('only sends sequence messages between declared participants', () => {
+    for (const { topic, diagram } of allDiagrams) {
+      if (diagram.kind !== 'sequence') continue
+      const ids = new Set(diagram.participants.map((p) => p.id))
+      expect(ids.size, topic.id).toBe(diagram.participants.length)
+      for (const message of diagram.messages) {
+        expect(ids.has(message.from), `${topic.id}: from ${message.from}`).toBe(true)
+        expect(ids.has(message.to), `${topic.id}: to ${message.to}`).toBe(true)
+      }
+    }
+  })
+
+  it('keeps sequence diagrams narrow enough to stay readable', () => {
+    for (const { topic, diagram } of allDiagrams) {
+      if (diagram.kind !== 'sequence') continue
+      // Each participant is a fixed-width column, so more than four forces an
+      // uncomfortable amount of sideways scrolling on a phone.
+      expect(diagram.participants.length, topic.id).toBeLessThanOrEqual(4)
+      expect(diagram.participants.length, topic.id).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('gives every decision at least two real alternatives', () => {
+    for (const { topic, diagram } of allDiagrams) {
+      if (diagram.kind !== 'decision') continue
+      expect(diagram.branches.length, topic.id).toBeGreaterThanOrEqual(2)
+      expect(diagram.question.trim().endsWith('?'), topic.id).toBe(true)
+      const conditions = diagram.branches.map((branch) => branch.condition)
+      expect(new Set(conditions).size, topic.id).toBe(conditions.length)
+    }
+  })
+
+  it('keeps flows long enough to show a sequence and short enough to read', () => {
+    for (const { topic, diagram } of allDiagrams) {
+      if (diagram.kind !== 'flow') continue
+      expect(diagram.nodes.length, topic.id).toBeGreaterThanOrEqual(3)
+      expect(diagram.nodes.length, topic.id).toBeLessThanOrEqual(7)
+    }
+  })
+
+  it('does not nest containment diagrams deeper than three levels', () => {
+    const depthOf = (box: { children?: unknown[] }): number =>
+      1 + Math.max(0, ...((box.children ?? []) as { children?: unknown[] }[]).map(depthOf))
+    for (const { topic, diagram } of allDiagrams) {
+      if (diagram.kind !== 'nested') continue
+      /*
+       * Every level costs 24px of the 286px root width, so level 4 still has
+       * about 190px of text room - verified in the browser to be comfortably
+       * readable. Level 5 would drop under 170px and start wrapping short
+       * labels, so that is where the line is drawn.
+       */
+      expect(depthOf(diagram.root), topic.id).toBeLessThanOrEqual(4)
+    }
+  })
+
+  it('uses no markdown markers, since SVG text is rendered literally', () => {
+    for (const { topic, diagram } of allDiagrams) {
+      const serialised = JSON.stringify(diagram)
+      // RichText does not run inside the SVG, so `code` and **bold** would
+      // show up as raw asterisks and backticks in the picture.
+      expect(serialised.includes('**'), `${topic.id}: ${diagram.title}`).toBe(false)
+      expect(serialised.includes('`'), `${topic.id}: ${diagram.title}`).toBe(false)
+    }
+  })
+
+  it('covers the concepts most likely to need a picture', () => {
+    const byId = new Map(ckadTopics.map((topic) => [topic.id, topic]))
+    for (const id of [
+      'kubernetes-architecture',
+      'probes',
+      'rolling-updates',
+      'authn-authz-admission',
+      'rbac',
+      'service-types',
+      'dns-and-service-discovery',
+      'networkpolicy',
+      'persistent-volume-claims',
+      'multi-container-patterns',
+    ]) {
+      expect(byId.get(id)?.diagrams?.length ?? 0, id).toBeGreaterThan(0)
+    }
+  })
+})

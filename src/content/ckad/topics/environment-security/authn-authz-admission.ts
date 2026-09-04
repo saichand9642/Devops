@@ -40,6 +40,85 @@ export const authnAuthzAdmission: Topic = {
     'ValidatingAdmissionPolicy is the newer, in-tree alternative to a validating webhook: rules written in CEL and evaluated by the API server, with no external service to keep running.',
     '`kubectl auth can-i` tests only the authorization stage. A request can pass `can-i` and still be rejected by admission - which is exactly what a quota rejection is.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Every request crosses four gates',
+      caption:
+        'The gate that rejected you determines the fix. 401 is credentials, 403 is RBAC, and an admission denial names the webhook or policy.',
+      nodes: [
+        {
+          label: 'Request reaches kube-apiserver',
+          detail: 'kubectl, a controller, or a Pod using its ServiceAccount',
+        },
+        {
+          label: '1. Authentication - who are you?',
+          detail: 'Certificate, bearer token, or ServiceAccount token',
+          tone: 'accent',
+          branch: {
+            label: '401 Unauthorized',
+            detail: 'Bad or missing credentials. RBAC never even runs.',
+          },
+        },
+        {
+          label: '2. Authorization - may you?',
+          detail: 'RBAC checks verb + resource + namespace',
+          arrowLabel: 'identity established',
+          branch: {
+            label: '403 Forbidden',
+            detail: 'Message names the user, verb and resource. Fix the Role.',
+          },
+        },
+        {
+          label: '3. Admission - mutating',
+          detail: 'Defaults injected: ServiceAccount, LimitRange defaults',
+          arrowLabel: 'permitted',
+        },
+        {
+          label: '4. Admission - validating',
+          detail: 'ResourceQuota, Pod Security, webhooks',
+          branch: {
+            label: 'Denied by admission',
+            detail: 'Error quotes the plugin, e.g. exceeded quota',
+          },
+        },
+        {
+          label: 'Validated and written to etcd',
+          detail: 'Only now does kubectl print "created"',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Reading the error you got',
+      caption: 'Do not guess. The verb in the message tells you exactly which rule to add.',
+      question: 'What did the API server return?',
+      branches: [
+        {
+          condition: 'Unauthorized',
+          result: 'Authentication failed',
+          detail: 'Wrong kubeconfig, expired token, wrong context',
+        },
+        {
+          condition: 'forbidden: User cannot list pods',
+          result: 'RBAC is missing a rule',
+          detail: 'Confirm with kubectl auth can-i list pods',
+          tone: 'accent',
+        },
+        {
+          condition: 'exceeded quota',
+          result: 'A ResourceQuota denied it',
+          detail: 'Add requests and limits, or ask for less',
+        },
+        {
+          condition: 'violates PodSecurity restricted',
+          result: 'Namespace policy denied it',
+          detail: 'Add the securityContext the policy requires',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'SelfSubjectAccessReview',

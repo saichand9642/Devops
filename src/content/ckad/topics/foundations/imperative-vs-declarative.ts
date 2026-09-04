@@ -28,6 +28,70 @@ export const imperativeVsDeclarative: Topic = {
     'Imperative generators exist for a fixed set of objects: `run` (Pod), `create deployment|job|cronjob|configmap|secret|service|serviceaccount|role|rolebinding|clusterrole|clusterrolebinding|namespace|quota|ingress`, plus `expose`, `scale`, `set image|env|resources|serviceaccount`, `label`, `annotate`, and `autoscale`.',
     'Server-side apply (`kubectl apply --server-side`) moves the merge to the API server and tracks field ownership, which matters when several controllers manage one object. It is good to know exists; CKAD rarely requires it.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Imperative, declarative, or both?',
+      caption:
+        'In the exam the answer is almost always "both": generate with a command, then edit the YAML.',
+      question: 'What does the task ask for?',
+      branches: [
+        {
+          condition: 'a simple object with no unusual fields',
+          result: 'Imperative only',
+          detail: 'kubectl create or kubectl run, done in one line',
+        },
+        {
+          condition: 'fields no flag can set',
+          result: 'Generate, then edit',
+          detail: '--dry-run=client -o yaml > file, edit, kubectl apply -f',
+          tone: 'accent',
+        },
+        {
+          condition: 'the object already exists and must change',
+          result: 'kubectl edit, or apply an updated file',
+          detail: 'kubectl set image and scale also work in place',
+        },
+        {
+          condition: 'you must show or keep the manifest',
+          result: 'Declarative only',
+          detail: 'Write the file, apply it, keep it',
+        },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'The generate-then-edit loop',
+      caption:
+        'This is the single highest-value habit for the exam: never hand-write YAML you could have generated.',
+      nodes: [
+        {
+          label: 'Pick the closest generator',
+          detail: 'kubectl create deployment, run, create job, expose',
+        },
+        {
+          label: 'Add --dry-run=client -o yaml',
+          detail: 'Builds the object locally, sends nothing to the cluster',
+          arrowLabel: 'do not apply yet',
+          tone: 'accent',
+        },
+        { label: 'Redirect to a file', detail: '> app.yaml', arrowLabel: 'save it' },
+        {
+          label: 'Edit only what the task needs',
+          detail: 'Add probes, volumes, resources, securityContext',
+        },
+        {
+          label: 'kubectl apply -f app.yaml',
+          detail: 'Object created, file kept as evidence',
+          tone: 'success',
+          branch: {
+            label: 'Validation error',
+            detail: 'Read the field path in the message, fix, apply again',
+          },
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Any object',

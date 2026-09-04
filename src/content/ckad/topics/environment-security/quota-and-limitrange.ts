@@ -31,6 +31,73 @@ export const quotaAndLimitRange: Topic = {
     'If a LimitRange sets a `default` limit but no `defaultRequest`, the request is set equal to the limit. If it sets `defaultRequest` but no `default`, the limit is left unset unless a quota requires one.',
     'A rejected Pod created by a controller (Deployment, Job, StatefulSet) produces a `FailedCreate` event on the *controller*, not a Pending Pod, because the Pod was never admitted.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'LimitRange fills gaps, ResourceQuota says no',
+      caption:
+        'They run in that order. A LimitRange default can be the reason a Pod that looks fine is rejected by quota.',
+      nodes: [
+        {
+          label: 'You create a Pod with no resources set',
+          detail: 'A namespace with both objects in place',
+        },
+        {
+          label: 'LimitRange (mutating admission)',
+          detail: 'Injects default requests and limits into the container',
+          tone: 'accent',
+          arrowLabel: 'fills in the blanks',
+          branch: {
+            label: 'Outside min or max',
+            detail: 'Rejected: must be no more than max, no less than min',
+          },
+        },
+        {
+          label: 'The Pod now HAS resource values',
+          detail: 'Even though your YAML did not',
+        },
+        {
+          label: 'ResourceQuota (validating admission)',
+          detail: 'Adds them to the namespace total',
+          arrowLabel: 'checks the sum',
+          branch: {
+            label: 'exceeded quota',
+            detail: 'Error names the resource and the used/limit numbers',
+          },
+        },
+        {
+          label: 'Created',
+          detail: 'kubectl describe quota shows the new totals',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Which object does the task need?',
+      caption: 'Per-container rules are LimitRange. Namespace totals are ResourceQuota.',
+      question: 'What is being constrained?',
+      branches: [
+        {
+          condition: 'defaults and bounds for each container',
+          result: 'LimitRange',
+          detail: 'default, defaultRequest, min, max',
+          tone: 'accent',
+        },
+        {
+          condition: 'the total the namespace may consume',
+          result: 'ResourceQuota',
+          detail: 'requests.cpu, limits.memory, pods, configmaps',
+        },
+        {
+          condition: 'a quota exists and Pods are being rejected',
+          result: 'Add requests and limits',
+          detail: 'With a quota on compute, resources become mandatory',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'ResourceQuota',

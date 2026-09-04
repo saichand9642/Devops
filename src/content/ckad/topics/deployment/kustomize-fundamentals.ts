@@ -32,6 +32,75 @@ export const kustomizeFundamentals: Topic = {
     '`configMapGenerator`/`secretGenerator` append a hash suffix by default (`app-config-7d9f8b6c4`). Disable it with `generatorOptions: {disableNameSuffixHash: true}` if something outside Kustomize references the name.',
     '`namespace:` in a kustomization sets the namespace on every generated object, which is how one overlay targets one environment.',
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'Base plus overlay',
+      caption:
+        'The base never knows about the overlays. An overlay only records the difference, which is why the diff stays readable.',
+      root: {
+        label: 'Repository',
+        children: [
+          {
+            label: 'base/',
+            detail: 'The full, environment-neutral manifests',
+            tone: 'accent',
+            children: [
+              { label: 'kustomization.yaml', detail: 'resources: deployment, service' },
+              { label: 'deployment.yaml', detail: 'replicas: 1, image: app:1.0.0' },
+            ],
+          },
+          {
+            label: 'overlays/prod/',
+            detail: 'Only what differs in production',
+            children: [
+              {
+                label: 'kustomization.yaml',
+                detail: 'resources: ../../base, plus patches and images',
+              },
+              {
+                label: 'replicas-patch.yaml',
+                detail: 'replicas: 10 - nothing else',
+                tone: 'success',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      kind: 'flow',
+      title: 'How kubectl apply -k resolves an overlay',
+      caption:
+        'Always run kubectl kustomize first. It prints the merged result without touching the cluster.',
+      nodes: [
+        {
+          label: 'kubectl apply -k overlays/prod',
+          detail: 'Reads overlays/prod/kustomization.yaml',
+        },
+        {
+          label: 'Load the base resources',
+          detail: 'Follows the ../../base reference',
+          arrowLabel: 'resources:',
+        },
+        {
+          label: 'Apply patches on top',
+          detail: 'patches, replicas, images, namePrefix',
+          arrowLabel: 'merge',
+          tone: 'accent',
+        },
+        {
+          label: 'Add common labels and namespace',
+          detail: 'commonLabels and namespace apply to everything',
+        },
+        {
+          label: 'Send the merged manifests to the API',
+          detail: 'Identical to applying the printed YAML by hand',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Kustomization',

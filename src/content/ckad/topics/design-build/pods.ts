@@ -36,6 +36,87 @@ export const pods: Topic = {
     "A Pod's IP is assigned by the CNI plugin at start and is not stable across restarts of the Pod. That is the entire reason Services exist.",
     '`spec.nodeName` is set by the scheduler. `spec.nodeSelector`, affinity rules and tolerations constrain which nodes are acceptable.',
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'What a Pod actually shares',
+      caption:
+        'One IP, one set of ports, one localhost. That single fact explains sidecars, port clashes and why containers in a Pod talk over 127.0.0.1.',
+      root: {
+        label: 'Pod',
+        detail: 'Scheduled as one unit onto one node',
+        children: [
+          {
+            label: 'Shared network namespace',
+            detail: 'One Pod IP, one port space, shared localhost',
+            tone: 'accent',
+          },
+          {
+            label: 'Shared volumes',
+            detail: 'Any container may mount any of spec.volumes',
+            tone: 'accent',
+          },
+          {
+            label: 'Container: app',
+            detail: 'Listens on 8080',
+            children: [{ label: 'Own filesystem', detail: 'From its own image' }],
+          },
+          {
+            label: 'Container: sidecar',
+            detail: 'Reaches the app on localhost:8080',
+            children: [{ label: 'Own filesystem', detail: 'Different image, same Pod' }],
+          },
+          {
+            label: 'NOT shared: PID, filesystem root, memory',
+            detail: 'Unless you opt in with shareProcessNamespace',
+            tone: 'muted',
+          },
+        ],
+      },
+    },
+    {
+      kind: 'flow',
+      title: 'Pod phases from creation to Running',
+      caption:
+        'Pending means "not yet on a node or still pulling". Running means "containers started", not "healthy".',
+      nodes: [
+        { label: 'Pending', detail: 'Accepted, waiting for a node or an image' },
+        {
+          label: 'Scheduled',
+          detail: 'spec.nodeName is set',
+          arrowLabel: 'scheduler picks a node',
+          branch: {
+            label: 'Stays Pending',
+            detail: 'No node fits: resources, taints, or a PVC not bound',
+          },
+        },
+        {
+          label: 'Image pulled, init containers run',
+          detail: 'Each init container must exit 0, in order',
+          arrowLabel: 'kubelet takes over',
+          branch: {
+            label: 'ImagePullBackOff or Init:Error',
+            detail: 'Wrong image name, no pull secret, or init failed',
+          },
+        },
+        {
+          label: 'Running',
+          detail: 'All app containers started',
+          tone: 'success',
+          branch: {
+            label: 'CrashLoopBackOff',
+            detail: 'Container exits repeatedly; kubelet backs off',
+          },
+        },
+        {
+          label: 'Ready',
+          detail: 'readinessProbe passing, so it can receive traffic',
+          arrowLabel: 'probes pass',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

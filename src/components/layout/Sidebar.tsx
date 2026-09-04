@@ -1,16 +1,24 @@
 import { Link, NavLink } from 'react-router-dom'
-import { ckadCourse } from '../../content/courses'
+import { courseIndexes } from '../../content/registry'
+import { weightBadge } from '../../lib/domain-label'
+import { useActiveCourseIndex } from '../../lib/use-course'
 import { useProgress } from '../../lib/use-progress'
 import { courseCompletion, domainStats } from '../../lib/stats'
 import { ProgressBar } from '../ui/ProgressBar'
 import { BrandMark } from './BrandMark'
-import { primaryNav, secondaryNav } from './navigation'
+import { primaryNavFor, secondaryNavFor } from './navigation'
 
-/** Desktop navigation: primary destinations plus the CKAD domain outline. */
+/**
+ * Desktop navigation: primary destinations, the active course's domain
+ * outline, and a switcher when more than one course is installed.
+ */
 export function Sidebar() {
   const { state } = useProgress()
-  const completion = courseCompletion(ckadCourse, state)
-  const domains = domainStats(ckadCourse, state)
+  const { course } = useActiveCourseIndex()
+  const primaryNav = primaryNavFor(course)
+  const secondaryNav = secondaryNavFor(course)
+  const completion = courseCompletion(course, state)
+  const domains = domainStats(course, state)
 
   return (
     <aside className="sidebar">
@@ -48,7 +56,7 @@ export function Sidebar() {
       </div>
 
       <div className="sidebar__section">
-        <p className="sidebar__heading">CKAD progress</p>
+        <p className="sidebar__heading">{course.examCode} progress</p>
         <div className="sidebar__progress">
           <ProgressBar
             value={completion.percent}
@@ -58,25 +66,49 @@ export function Sidebar() {
         </div>
       </div>
 
+      {courseIndexes.length > 1 && (
+        <div className="sidebar__section">
+          <p className="sidebar__heading">Courses</p>
+          {courseIndexes.map((entry) => (
+            /*
+             * aria-current="location", not the NavLink default of "page":
+             * this marks which COURSE you are inside, which is true on every
+             * page under /ckad or /terraform - whereas "page" would falsely
+             * claim the dashboard is the page you are looking at.
+             */
+            <NavLink
+              key={entry.course.id}
+              to={entry.course.route}
+              className="sidebar__link"
+              aria-current="location"
+              end={false}
+            >
+              <span className="sidebar__link-icon" aria-hidden="true">
+                {entry.course.icon}
+              </span>
+              {entry.course.examCode}
+            </NavLink>
+          ))}
+        </div>
+      )}
+
       <div className="sidebar__section">
         <p className="sidebar__heading">Curriculum</p>
         {domains.map((entry) => (
           /*
-           * A plain Link, not a NavLink: these point at sections of the CKAD
-           * dashboard, so marking them aria-current="page" would flag all five
-           * as the current page whenever you are anywhere under /ckad.
+           * A plain Link, not a NavLink: these point at sections of the
+           * course dashboard, so marking them aria-current="page" would flag
+           * every one as the current page whenever you are inside the course.
            */
           <Link
             key={entry.domain.id}
-            to={`/ckad#domain-${entry.domain.id}`}
+            to={`${course.route}#domain-${entry.domain.id}`}
             className="sidebar__link"
             style={{ display: 'grid', gap: '0.25rem' }}
           >
             <span className="row" style={{ gap: '0.4rem' }}>
               <span style={{ flex: '1 1 auto', minWidth: 0 }}>{entry.domain.shortTitle}</span>
-              <span className="subtle nowrap">
-                {entry.domain.examWeight === null ? 'support' : `${entry.domain.examWeight}%`}
-              </span>
+              <span className="subtle nowrap">{weightBadge(entry.domain)}</span>
             </span>
             <span className="subtle">
               {entry.completed}/{entry.total} lessons

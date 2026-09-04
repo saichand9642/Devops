@@ -92,7 +92,15 @@ export default defineConfig(({ mode }) => ({
             }
             return 'vendor'
           }
-          if (id.includes('/src/content/')) return 'content-ckad'
+          /*
+           * One chunk per course, so editing a CKAD lesson does not
+           * invalidate the cached Terraform content (and vice versa). With a
+           * precaching service worker that is the difference between a small
+           * update download and re-fetching every course.
+           */
+          if (id.includes('/src/content/ckad/')) return 'content-ckad'
+          if (id.includes('/src/content/terraform/')) return 'content-terraform'
+          if (id.includes('/src/content/')) return 'content-shared'
           return undefined
         },
       },

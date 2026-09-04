@@ -30,6 +30,39 @@ export const choosingDeploymentTooling: Topic = {
     'State: plain and Kustomize keep no extra state (beyond the `last-applied-configuration` annotation). Helm stores release history in Secrets, which is both the source of `helm rollback` and an extra thing that can be lost.',
     'GitOps tools such as Argo CD and Flux support all three natively, so the choice does not lock you out of GitOps either way.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Plain YAML, Kustomize, or Helm?',
+      caption:
+        'For the exam: plain YAML unless the task names a tool. Reach for a tool only when the task hands you a chart or a kustomization.',
+      question: 'What are you being handed?',
+      branches: [
+        {
+          condition: 'nothing - you are writing it',
+          result: 'Plain YAML',
+          detail: 'Generate with --dry-run=client -o yaml and edit',
+          tone: 'accent',
+        },
+        {
+          condition: 'the same app for several environments',
+          result: 'Kustomize',
+          detail: 'Built into kubectl as -k; no templating language',
+        },
+        {
+          condition: 'a third-party chart, or many values to parameterise',
+          result: 'Helm',
+          detail: 'Versioned releases, upgrade and rollback built in',
+        },
+        {
+          condition: 'a kustomization.yaml or a Chart.yaml in the task',
+          result: 'Use that tool, not YAML',
+          detail: 'The task is testing whether you recognise it',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Comparison (not a Kubernetes object)',

@@ -31,6 +31,45 @@ export const usingDocsAndTime: Topic = {
     'Budget the last ten to fifteen minutes for verification only. Re-running `kubectl get`, `rollout status` and `get endpoints` across your tasks catches the ones that silently did not take effect.',
     'Objects created in the wrong namespace are the most common silent failure, which is why the verification pass starts with context and namespace.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Where to look, in order of speed',
+      caption:
+        'The docs tab is the slowest option. Try the two offline ones first - they are faster and always match your cluster.',
+      nodes: [
+        {
+          label: 'kubectl explain <kind>.<path>',
+          detail: 'Fastest. Field names, types, and whether it is required.',
+          tone: 'accent',
+        },
+        {
+          label: 'kubectl create ... --dry-run=client -o yaml',
+          detail: 'Gives you a correct skeleton to edit',
+          arrowLabel: 'if you need a whole object',
+        },
+        {
+          label: 'kubectl get <existing> -o yaml',
+          detail: 'Copy the shape from something already working',
+          arrowLabel: 'if a similar object exists',
+        },
+        {
+          label: 'The allowed documentation site',
+          detail: 'Search, then copy from the example blocks',
+          arrowLabel: 'last resort',
+          branch: {
+            label: 'Browsing instead of searching',
+            detail: 'Search the exact field name; never read a page top to bottom',
+          },
+        },
+        {
+          label: 'Field written and validated',
+          detail: 'kubectl apply --dry-run=server confirms it',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Exam strategy (not a Kubernetes object)',
