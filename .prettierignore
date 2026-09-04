@@ -1,0 +1,7 @@
+dist
+dev-dist
+node_modules
+coverage
+package-lock.json
+*.pdf
+public/icons

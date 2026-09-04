@@ -1,0 +1,85 @@
+name: Deploy to GitHub Pages
+
+# Publishes the static PWA to GitHub Pages.
+#
+# This workflow does NOT enable Pages for you. Before the first run, go to
+# Settings -> Pages and set "Source" to "GitHub Actions".
+#
+# The base path is derived from the repository name, so the same workflow works
+# unchanged if the repository is renamed or forked.
+
+on:
+  push:
+    branches: [main]
+  # Lets you publish from the Actions tab without pushing.
+  workflow_dispatch:
+
+# Read the repo, and mint the token Pages deployment needs. Nothing else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deployments at once, but do not cancel one that is mid-flight -
+# a half-finished Pages deployment is worse than a queued one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Validate and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Matches the "engines" field in package.json.
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        # A clean, reproducible install from the lockfile.
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        env:
+          # Pages serves the site from /<repository-name>/, so the bundle, the
+          # PWA manifest scope and the router basename all need that prefix.
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the built site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
