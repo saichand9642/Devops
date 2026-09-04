@@ -31,6 +31,41 @@ export const secrets: Topic = {
     'ServiceAccount tokens are no longer auto-created as long-lived Secrets. Modern clusters project a short-lived, audience-scoped token into the Pod at `/var/run/secrets/kubernetes.io/serviceaccount/token` via a `projected` volume. A long-lived token Secret can still be created deliberately, and generally should not be.',
     'Default file mode for a Secret volume is 0644; use `defaultMode: 0400` for keys that should not be world-readable inside the container.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'What base64 in a Secret does and does not do',
+      caption:
+        'base64 is an encoding, not encryption. Anyone who can read the Secret can read the value.',
+      nodes: [
+        {
+          label: 'You supply a plain value',
+          detail: 'kubectl create secret generic db --from-literal=pass=s3cr3t',
+        },
+        {
+          label: 'Stored under data, base64 encoded',
+          detail: 'kubectl get secret -o yaml shows czNjcjN0',
+          arrowLabel: 'encoded, not encrypted',
+          tone: 'warning',
+        },
+        {
+          label: 'Decode it to read it',
+          detail: 'kubectl get secret db -o jsonpath={.data.pass} | base64 -d',
+        },
+        {
+          label: 'Injected decoded into the container',
+          detail: 'The env var or file holds the original plain text',
+          arrowLabel: 'kubelet decodes',
+          tone: 'success',
+        },
+        {
+          label: 'Write stringData instead by hand',
+          detail: 'Kubernetes encodes it for you - fewer mistakes',
+          tone: 'accent',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Secret',

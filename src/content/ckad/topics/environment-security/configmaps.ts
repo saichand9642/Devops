@@ -31,6 +31,70 @@ export const configmaps: Topic = {
     'Mark a key optional with `optional: true` on the reference, which lets the container start even when the ConfigMap or key is absent.',
     '`envFrom` skips keys whose names are not valid environment-variable identifiers (for example `nginx.conf`) and reports them as an event rather than failing.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Env var or mounted file?',
+      caption:
+        'The difference that matters: mounted files update themselves, environment variables never do.',
+      question: 'How does the app read its configuration?',
+      branches: [
+        {
+          condition: 'a handful of settings from the environment',
+          result: 'env with configMapKeyRef',
+          detail: 'One key at a time, renameable',
+        },
+        {
+          condition: 'every key as an environment variable',
+          result: 'envFrom with configMapRef',
+          detail: 'Keys must already be valid variable names',
+          tone: 'accent',
+        },
+        {
+          condition: 'a real config file the app parses',
+          result: 'volume + volumeMounts',
+          detail: 'Each key becomes a file named after the key',
+        },
+        {
+          condition: 'it must pick up changes without a restart',
+          result: 'volume, not env',
+          detail: 'Mounted files refresh; env vars are fixed at start',
+          tone: 'warning',
+        },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'A ConfigMap becoming files in a container',
+      caption:
+        'Mounting over a directory hides everything already in it. Use subPath when you only want to add one file.',
+      nodes: [
+        {
+          label: 'ConfigMap app-config',
+          detail: 'data: app.properties, log.level',
+          tone: 'accent',
+        },
+        {
+          label: 'Pod declares a volume',
+          detail: 'volumes: - name: conf  configMap: {name: app-config}',
+          arrowLabel: 'reference by name',
+        },
+        {
+          label: 'Container mounts it',
+          detail: 'volumeMounts: - name: conf  mountPath: /etc/app',
+        },
+        {
+          label: 'One file per key',
+          detail: '/etc/app/app.properties and /etc/app/log.level',
+          tone: 'success',
+          branch: {
+            label: 'The directory looked empty before',
+            detail: 'The mount replaced its contents - use subPath instead',
+          },
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'ConfigMap',

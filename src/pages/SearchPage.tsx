@@ -1,10 +1,12 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
-import { ckadDomains } from '../content/ckad/domains'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { buildSearchIndex, searchCourse } from '../lib/search'
+import { weightBadge } from '../lib/domain-label'
 import type { SearchResultKind } from '../lib/search'
-import type { Difficulty } from '../content/types'
+import type { Course, Difficulty } from '../content/types'
 import { Badge } from '../components/ui/Badge'
 import { EmptyState } from '../components/ui/StateBlock'
 import { RichText } from '../components/ui/RichText'
@@ -31,10 +33,29 @@ const kindIcon: Record<SearchResultKind, string> = {
   question: '❓',
 }
 
-/** Built once - the index is derived purely from static content. */
-const searchIndex = buildSearchIndex(ckadCourse)
+/*
+ * Indexes are built once per course and cached, not once per render: the
+ * content is static, and building one walks every lesson, question and
+ * command in the course.
+ */
+const indexCache = new Map<string, ReturnType<typeof buildSearchIndex>>()
+
+function searchIndexFor(course: Course) {
+  const cached = indexCache.get(course.id)
+  if (cached) return cached
+  const built = buildSearchIndex(course)
+  indexCache.set(course.id, built)
+  return built
+}
 
 export function SearchPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <SearchView catalog={catalog} />
+}
+
+function SearchView({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState(params.get('q') ?? '')
   const deferredQuery = useDeferredValue(query)
@@ -52,12 +73,12 @@ export function SearchPage() {
 
   const results = useMemo(
     () =>
-      searchCourse(searchIndex, deferredQuery, {
+      searchCourse(searchIndexFor(course), deferredQuery, {
         domainId: domainFilter === 'all' ? null : domainFilter,
         kind: kindFilter === 'all' ? null : kindFilter,
         difficulty: difficultyFilter === 'all' ? null : difficultyFilter,
       }),
-    [deferredQuery, domainFilter, kindFilter, difficultyFilter],
+    [course, deferredQuery, domainFilter, kindFilter, difficultyFilter],
   )
 
   const hasQuery = deferredQuery.trim().length > 0
@@ -112,10 +133,10 @@ export function SearchPage() {
               onChange={(event) => setParam('domain', event.target.value)}
             >
               <option value="all">All domains</option>
-              {ckadDomains.map((domain) => (
+              {course.domains.map((domain) => (
                 <option key={domain.id} value={domain.id}>
                   {domain.shortTitle}
-                  {domain.examWeight !== null ? ` (${domain.examWeight}%)` : ''}
+                  {` (${weightBadge(domain)})`}
                 </option>
               ))}
             </select>
@@ -198,7 +219,7 @@ export function SearchPage() {
                 : 'Try a shorter or differently spelled search term. Search matches whole words and prefixes.'
             }
             action={
-              <Link className="btn btn--secondary" to={ckadCourse.route}>
+              <Link className="btn btn--secondary" to={course.route}>
                 Browse the dashboard instead
               </Link>
             }

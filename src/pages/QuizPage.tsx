@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
-import { domainById } from '../content/ckad/domains'
-import { questionById, questionsForDomain } from '../content/ckad/questions'
 import type { Question } from '../content/types'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { useProgress } from '../lib/use-progress'
 import { gradeQuestion } from '../lib/scoring'
 import type { GradeResult } from '../lib/scoring'
@@ -19,21 +19,28 @@ import { ProgressBar } from '../components/ui/ProgressBar'
  * every question whose most recent attempt was wrong.
  */
 export function QuizPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <QuizView catalog={catalog} />
+}
+
+function QuizView({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const { domainId } = useParams<{ domainId: string }>()
   const [params] = useSearchParams()
   const { state, recordAnswer, clearAnswer } = useProgress()
 
   const isReview = domainId === 'review'
-  const domain = domainId ? domainById.get(domainId) : undefined
+  const domain = domainId ? catalog.domainById.get(domainId) : undefined
 
   const questions = useMemo<Question[]>(() => {
     if (isReview) {
       return Object.entries(state.questions)
         .filter(([, record]) => !record.lastCorrect)
-        .map(([id]) => questionById.get(id))
+        .map(([id]) => catalog.questionById.get(id))
         .filter((question): question is Question => Boolean(question))
     }
-    return domainId ? questionsForDomain(domainId) : []
+    return domainId ? catalog.questionsForDomain(domainId) : []
     // The review list is captured when the drill starts so answering a
     // question does not remove it from under the learner mid-session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,7 +69,7 @@ export function QuizPage() {
           title="That practice set does not exist"
           description="Pick a domain from the practice hub instead."
           action={
-            <Link className="btn" to={`${ckadCourse.route}/practice`}>
+            <Link className="btn" to={`${course.route}/practice`}>
               Back to practice
             </Link>
           }
@@ -86,7 +93,7 @@ export function QuizPage() {
               : 'This domain has no questions yet.'
           }
           action={
-            <Link className="btn" to={`${ckadCourse.route}/practice`}>
+            <Link className="btn" to={`${course.route}/practice`}>
               Back to practice
             </Link>
           }
@@ -134,9 +141,9 @@ export function QuizPage() {
     <div className="page stack">
       <header className="page-header">
         <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <Link to={ckadCourse.route}>CKAD</Link>
+          <Link to={course.route}>{course.examCode}</Link>
           <span aria-hidden="true">/</span>
-          <Link to={`${ckadCourse.route}/practice`}>Practice</Link>
+          <Link to={`${course.route}/practice`}>Practice</Link>
           <span aria-hidden="true">/</span>
           <span>{isReview ? 'Retry incorrect' : (domain?.shortTitle ?? '')}</span>
         </nav>
@@ -241,7 +248,7 @@ export function QuizPage() {
             Next question →
           </button>
         ) : (
-          <Link className="btn" to={`${ckadCourse.route}/practice`}>
+          <Link className="btn" to={`${course.route}/practice`}>
             Finish set →
           </Link>
         )}
@@ -249,7 +256,7 @@ export function QuizPage() {
 
       <Link
         className="subtle"
-        to={`${ckadCourse.route}/topics/${current.topicId}`}
+        to={`${course.route}/topics/${current.topicId}`}
         style={{ display: 'inline-block' }}
       >
         Read the lesson for this question →

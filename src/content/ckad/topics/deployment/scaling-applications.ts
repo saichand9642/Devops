@@ -29,6 +29,53 @@ export const scalingApplications: Topic = {
     'Scaling to 0 is legal for Deployments and is the standard way to stop an application without deleting it. Its Service then has no endpoints.',
     'A PodDisruptionBudget with `minAvailable` or `maxUnavailable` restricts *voluntary* disruptions (drains, evictions). It does not stop you from scaling down deliberately.',
   ],
+  diagrams: [
+    {
+      kind: 'sequence',
+      title: 'The HorizontalPodAutoscaler loop',
+      caption:
+        'If metrics-server is missing, the HPA TARGETS column shows <unknown> and nothing scales. Check that first.',
+      participants: [
+        { id: 'hpa', label: 'HPA' },
+        { id: 'ms', label: 'metrics-server' },
+        { id: 'dep', label: 'Deployment' },
+      ],
+      messages: [
+        { from: 'hpa', to: 'ms', label: 'current CPU per Pod?' },
+        { from: 'ms', to: 'hpa', label: '340m of 200m requested', kind: 'return' },
+        { from: 'hpa', to: 'hpa', label: 'compare with target 50%' },
+        { from: 'hpa', to: 'dep', label: 'patch spec.replicas upward' },
+        { from: 'dep', to: 'hpa', label: 'new Pods become Ready', kind: 'return' },
+        { from: 'hpa', to: 'hpa', label: 'wait, then measure again' },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Manual or automatic scaling?',
+      caption:
+        'An HPA and a hard-coded replicas field fight each other. Set one or the other, never both.',
+      question: 'How should the replica count be decided?',
+      branches: [
+        {
+          condition: 'you know the number the task wants',
+          result: 'kubectl scale --replicas=N',
+          detail: 'Or edit spec.replicas in the manifest',
+        },
+        {
+          condition: 'it should follow load',
+          result: 'kubectl autoscale',
+          detail: 'Requires CPU requests on the containers and metrics-server',
+          tone: 'accent',
+        },
+        {
+          condition: 'both are already set',
+          result: 'Remove replicas from the manifest',
+          detail: 'Otherwise every apply undoes the HPA',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'HorizontalPodAutoscaler',

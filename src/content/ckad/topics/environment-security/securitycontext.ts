@@ -41,6 +41,53 @@ export const securitycontext: Topic = {
     "`seccompProfile.type: RuntimeDefault` applies the container runtime's default syscall filter, blocking dozens of rarely-needed syscalls. It is a one-line, low-risk hardening step and is required by the `restricted` Pod Security Standard.",
     'Pod Security Admission enforces these settings at the namespace level via labels (`pod-security.kubernetes.io/enforce: restricted`), rejecting Pods that do not comply. That is the modern replacement for PodSecurityPolicy.',
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'Pod-level versus container-level securityContext',
+      caption:
+        'The container setting always wins. fsGroup is the exception - it only exists at Pod level.',
+      root: {
+        label: 'Pod spec',
+        children: [
+          {
+            label: 'spec.securityContext',
+            detail: 'Defaults for every container in the Pod',
+            tone: 'accent',
+            children: [
+              { label: 'runAsUser: 1000', detail: 'Inherited unless overridden' },
+              { label: 'runAsNonRoot: true', detail: 'Refuses to start as uid 0' },
+              {
+                label: 'fsGroup: 2000',
+                detail: 'Pod level ONLY - sets group on mounted volumes',
+                tone: 'success',
+              },
+            ],
+          },
+          {
+            label: 'containers[0].securityContext',
+            detail: 'Overrides the Pod values for this container',
+            children: [
+              {
+                label: 'runAsUser: 2000',
+                detail: 'Wins over the Pod value of 1000',
+                tone: 'warning',
+              },
+              {
+                label: 'allowPrivilegeEscalation: false',
+                detail: 'Container level ONLY',
+              },
+              {
+                label: 'readOnlyRootFilesystem: true',
+                detail: 'Container level ONLY - add an emptyDir for temp files',
+              },
+              { label: 'capabilities: add / drop', detail: 'Container level ONLY' },
+            ],
+          },
+        ],
+      },
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

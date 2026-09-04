@@ -31,6 +31,109 @@ export const probes: Topic = {
     "Probes run from the node against the container's IP, not through a Service. `httpGet.host` defaults to the Pod IP; a named `port` from `containerPort` works and is more readable than a number.",
     'A container with no probes is considered Ready as soon as the process starts, which is almost never the truth for a real application.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'The three probes, in the order they matter',
+      caption:
+        'Readiness controls traffic. Liveness controls restarts. Startup buys slow apps time. Confusing readiness with liveness is the classic CKAD error.',
+      nodes: [
+        { label: 'Container process starts' },
+        {
+          label: 'startupProbe runs, alone',
+          detail: 'liveness and readiness are suspended while it runs',
+          tone: 'accent',
+          branch: {
+            label: 'failureThreshold reached',
+            detail: 'Container is killed and restarted - app was too slow',
+          },
+        },
+        {
+          label: 'livenessProbe begins',
+          detail: 'Asks: is this process still healthy?',
+          arrowLabel: 'startup succeeded',
+          branch: {
+            label: 'Liveness fails',
+            detail: 'Container RESTARTED. RESTARTS climbs; a crash loop follows.',
+          },
+        },
+        {
+          label: 'readinessProbe begins',
+          detail: 'Asks: may this Pod receive traffic yet?',
+          branch: {
+            label: 'Readiness fails',
+            detail: 'Pod removed from Endpoints. NOT restarted. READY shows 0/1.',
+          },
+        },
+        {
+          label: 'Pod is Ready and serving',
+          detail: 'Both probes keep running for the life of the container',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Which probe does this task need?',
+      caption: 'Match the consequence to the probe: removed from load balancing, or restarted.',
+      question: 'What should happen when the check fails?',
+      branches: [
+        {
+          condition: 'stop sending it traffic, but leave it alone',
+          result: 'readinessProbe',
+          detail: 'Warm-up, waiting on a dependency, draining',
+          tone: 'accent',
+        },
+        {
+          condition: 'restart the container',
+          result: 'livenessProbe',
+          detail: 'Deadlocks and unrecoverable states only',
+        },
+        {
+          condition: 'the app takes minutes to boot',
+          result: 'startupProbe',
+          detail: 'Better than a huge initialDelaySeconds on liveness',
+        },
+        {
+          condition: 'you are not sure',
+          result: 'readinessProbe alone',
+          detail: 'A wrong liveness probe causes outages; a wrong readiness one does not',
+          tone: 'warning',
+        },
+      ],
+    },
+    {
+      kind: 'nested',
+      title: 'The four fields every probe shares',
+      caption:
+        'Pick the handler, then the timing. periodSeconds times failureThreshold is how long a failure takes to be believed.',
+      root: {
+        label: 'livenessProbe / readinessProbe / startupProbe',
+        children: [
+          {
+            label: 'One handler, exactly one',
+            tone: 'accent',
+            children: [
+              { label: 'httpGet: path, port', detail: 'Any 2xx or 3xx counts as success' },
+              { label: 'tcpSocket: port', detail: 'Success if the TCP connection opens' },
+              { label: 'exec: command', detail: 'Success if it exits 0' },
+              { label: 'grpc: port', detail: 'For apps with a gRPC health service' },
+            ],
+          },
+          {
+            label: 'initialDelaySeconds',
+            detail: 'Wait this long before the first check. Default 0.',
+          },
+          { label: 'periodSeconds', detail: 'How often to check. Default 10.' },
+          { label: 'timeoutSeconds', detail: 'How long one check may take. Default 1.' },
+          {
+            label: 'failureThreshold',
+            detail: 'Consecutive failures before acting. Default 3.',
+          },
+        ],
+      },
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

@@ -29,6 +29,30 @@ export const deploymentsAndReplicaSets: Topic = {
     'Scaling a Deployment only changes the current ReplicaSet. Scaling a ReplicaSet directly works but the Deployment will reconcile it back on its next sync.',
     '`spec.paused: true` stops the controller from acting on template changes, which is how you batch several edits into one rollout.',
   ],
+  diagrams: [
+    {
+      kind: 'sequence',
+      title: 'What happens when you change the image',
+      caption:
+        'A new ReplicaSet is created rather than the old one being edited. That is the whole mechanism behind rollback.',
+      participants: [
+        { id: 'you', label: 'You' },
+        { id: 'dep', label: 'Deployment' },
+        { id: 'rs', label: 'ReplicaSets' },
+        { id: 'pods', label: 'Pods' },
+      ],
+      messages: [
+        { from: 'you', to: 'dep', label: 'set image to v2' },
+        { from: 'dep', to: 'dep', label: 'template hash changes' },
+        { from: 'dep', to: 'rs', label: 'create new ReplicaSet' },
+        { from: 'rs', to: 'pods', label: 'add Pods up to maxSurge' },
+        { from: 'pods', to: 'rs', label: 'new Pod becomes Ready', kind: 'return' },
+        { from: 'dep', to: 'rs', label: 'scale old ReplicaSet down by one' },
+        { from: 'dep', to: 'dep', label: 'repeat until new RS is at full size' },
+        { from: 'dep', to: 'you', label: 'rollout status: complete', kind: 'return' },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Deployment',

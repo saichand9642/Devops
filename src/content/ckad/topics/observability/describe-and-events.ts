@@ -30,6 +30,43 @@ export const describeAndEvents: Topic = {
     'The `count` field means repetition: a Warning with count 47 is a recurring problem, not a one-off. `describe` shows this as "(x47 over 12m)".',
     'Conditions carry `type`, `status`, `reason`, `message` and `lastTransitionTime`. The transition time tells you *when* a Pod stopped being Ready, which no event will tell you an hour later.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'How to read kubectl describe pod',
+      caption:
+        'Read it bottom-up. Events say what the cluster tried and failed to do, which is usually the whole answer.',
+      nodes: [
+        {
+          label: 'Events, at the very bottom',
+          detail: 'Start here. FailedScheduling, Failed, Unhealthy, BackOff.',
+          tone: 'accent',
+        },
+        {
+          label: 'Containers: State and Last State',
+          detail: 'Exit Code and Reason for the run that ended',
+          arrowLabel: 'if Events are quiet',
+        },
+        {
+          label: 'Conditions',
+          detail: 'PodScheduled, Initialized, ContainersReady, Ready',
+        },
+        {
+          label: 'Mounts, Environment, Node',
+          detail: 'Confirms the config actually reached the container',
+        },
+        {
+          label: 'You know which layer failed',
+          detail: 'Scheduling, image, init, app, or probe',
+          tone: 'success',
+          branch: {
+            label: 'No Events at all',
+            detail: 'They expire after about an hour. Recreate to regenerate them.',
+          },
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Event',

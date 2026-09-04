@@ -1,0 +1,201 @@
+import type { Question } from '../../types'
+
+/** Original practice questions for objective 7. */
+export const maintenanceQuestions: Question[] = [
+  {
+    id: 'tfq-mt-1',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-importing-infrastructure',
+    kind: 'mcq',
+    category: 'concept',
+    difficulty: 'beginner',
+    points: 1,
+    prompt: 'What does `terraform import` do?',
+    options: [
+      { id: 'a', text: 'Creates the resource if it does not exist, then records it in state' },
+      { id: 'b', text: 'Records an existing resource in state so Terraform manages it' },
+      { id: 'c', text: 'Copies a resource definition from another configuration' },
+      { id: 'd', text: 'Downloads a module from the registry' },
+    ],
+    correct: ['b'],
+    explanation:
+      'Import records what already exists. It creates nothing - if the resource is missing you get "Cannot import non-existent remote object". Import needs two halves: a configuration block and a state entry.',
+  },
+  {
+    id: 'tfq-mt-2',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-importing-infrastructure',
+    kind: 'mcq',
+    category: 'concept',
+    difficulty: 'intermediate',
+    points: 2,
+    prompt: 'Which flag generates draft configuration for resources named in `import` blocks?',
+    options: [
+      { id: 'a', text: 'terraform import -generate-config' },
+      { id: 'b', text: 'terraform plan -generate-config-out=FILE' },
+      { id: 'c', text: 'terraform show -generate' },
+      { id: 'd', text: 'terraform init -generate-config-out=FILE' },
+    ],
+    correct: ['b'],
+    explanation:
+      'Available from Terraform 1.5. The output is a draft, not a finished file: it includes computed attributes such as `id` and `arn` that must be removed. Applying it unedited produces confusing plans.',
+  },
+  {
+    id: 'tfq-mt-3',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-importing-infrastructure',
+    kind: 'mcq',
+    category: 'troubleshoot',
+    difficulty: 'advanced',
+    points: 3,
+    prompt:
+      'After importing a production RDS instance, the plan shows `-/+ must be replaced`. What should you do?',
+    options: [
+      { id: 'a', text: 'Apply - replacement is normal after an import' },
+      { id: 'b', text: 'Run terraform state rm and import again' },
+      {
+        id: 'c',
+        text: 'Do not apply. Read the # forces replacement comment and correct the configuration until the plan is clean',
+      },
+      { id: 'd', text: 'Add -refresh=false to suppress it' },
+    ],
+    correct: ['c'],
+    explanation:
+      'Your configuration differs from reality on a replacement-forcing attribute, so applying would destroy the database you just imported. Use `terraform state show` to see the real values and align the configuration. Adding `prevent_destroy` before the first apply turns this class of mistake into an error rather than an outage.',
+  },
+  {
+    id: 'tfq-mt-4',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-importing-infrastructure',
+    kind: 'mcq',
+    category: 'concept',
+    difficulty: 'intermediate',
+    points: 2,
+    prompt: 'Why is an `import` block preferable to the `terraform import` command in a team?',
+    options: [
+      { id: 'a', text: 'It is faster, because it skips the plan' },
+      {
+        id: 'b',
+        text: 'It lives in the configuration, appears in the plan, and works identically in CI and for every colleague',
+      },
+      { id: 'c', text: 'It can import resources that do not exist yet' },
+      { id: 'd', text: 'It does not require the resource id' },
+    ],
+    correct: ['b'],
+    explanation:
+      'The CLI command writes state immediately, with no review, and only for whoever ran it. The block is reviewable, repeatable, and composes with `-generate-config-out` and `for_each`. Remember to delete it once applied.',
+  },
+  {
+    id: 'tfq-mt-5',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-inspecting-state',
+    kind: 'mcq',
+    category: 'concept',
+    difficulty: 'beginner',
+    points: 1,
+    prompt:
+      'A plan reports "Unsupported attribute" on a resource you already manage. Which command answers it fastest?',
+    options: [
+      { id: 'a', text: 'terraform validate' },
+      { id: 'b', text: 'terraform state show <address>' },
+      { id: 'c', text: 'terraform graph' },
+      { id: 'd', text: 'terraform output -json' },
+    ],
+    correct: ['b'],
+    explanation:
+      '`state show` lists every recorded attribute with its current value, offline, in about a second. For a resource that does not exist yet, `terraform providers schema -json` gives the same information from the provider schema.',
+  },
+  {
+    id: 'tfq-mt-6',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-inspecting-state',
+    kind: 'mcq',
+    category: 'concept',
+    difficulty: 'intermediate',
+    points: 2,
+    prompt: 'A pipeline gate needs to fail when a plan would delete anything. What should it read?',
+    options: [
+      { id: 'a', text: 'The human-readable output of terraform plan, parsed with grep' },
+      { id: 'b', text: 'terraform show -json on the saved plan file' },
+      { id: 'c', text: 'The terraform.tfstate file directly' },
+      { id: 'd', text: 'terraform graph output' },
+    ],
+    correct: ['b'],
+    explanation:
+      '`terraform show -json` is a documented, versioned format with a `format_version` field, and it works for both state and a saved plan. The human-readable output is formatted for people and changes between versions; the state file layout is an internal detail. This is why policy tools consume the JSON plan.',
+  },
+  {
+    id: 'tfq-mt-7',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-inspecting-state',
+    kind: 'command',
+    category: 'command',
+    difficulty: 'beginner',
+    points: 1,
+    prompt: 'Write the command that lists every resource address Terraform is managing.',
+    acceptedAnswers: ['terraform state list'],
+    answerHint: 'terraform state ...',
+    explanation:
+      'It prints one address per line, including data sources (prefixed `data.`) and module resources (prefixed `module.`). It accepts a filter argument, so `terraform state list aws_instance` narrows it.',
+  },
+  {
+    id: 'tfq-mt-8',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-logging-and-debugging',
+    kind: 'mcq',
+    category: 'concept',
+    difficulty: 'beginner',
+    points: 1,
+    prompt: 'How is Terraform’s verbose logging enabled?',
+    options: [
+      { id: 'a', text: 'The --log-level command-line flag' },
+      { id: 'b', text: 'The TF_LOG environment variable' },
+      { id: 'c', text: 'A logging block inside the terraform block' },
+      { id: 'd', text: 'terraform init -verbose' },
+    ],
+    correct: ['b'],
+    explanation:
+      '`TF_LOG` is an environment variable, not a flag. Levels, least to most verbose: ERROR, WARN, INFO, DEBUG, TRACE. Logging is off when unset. Pair it with `TF_LOG_PATH` - DEBUG output is far too long for a terminal.',
+  },
+  {
+    id: 'tfq-mt-9',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-logging-and-debugging',
+    kind: 'mcq',
+    category: 'concept',
+    difficulty: 'intermediate',
+    points: 2,
+    prompt: 'You suspect a provider bug. Which logging configuration isolates it best?',
+    options: [
+      { id: 'a', text: 'TF_LOG=TRACE on everything' },
+      { id: 'b', text: 'TF_LOG_CORE=WARN with TF_LOG_PROVIDER=DEBUG, and TF_LOG_PATH set' },
+      { id: 'c', text: 'TF_LOG=ERROR, to see only the failure' },
+      { id: 'd', text: 'TF_LOG_PROVIDER=WARN with TF_LOG_CORE=TRACE' },
+    ],
+    correct: ['b'],
+    explanation:
+      'Scoping the level gives provider request and response detail without the very large volume of core graph-walk logging. Full TRACE produces a file nobody can read - and one containing every credential in every request.',
+  },
+  {
+    id: 'tfq-mt-10',
+    domainId: 'tf-maintenance',
+    topicId: 'tf-logging-and-debugging',
+    kind: 'mcq',
+    category: 'troubleshoot',
+    difficulty: 'advanced',
+    points: 3,
+    prompt: 'Why must a TRACE log be treated as a secret?',
+    options: [
+      { id: 'a', text: 'Because it contains the state file verbatim' },
+      {
+        id: 'b',
+        text: 'Because it includes full request and response payloads - authorization headers, tokens and resource attributes',
+      },
+      { id: 'c', text: 'Because it embeds your Terraform licence key' },
+      { id: 'd', text: 'It need not be - Terraform redacts sensitive values in logs' },
+    ],
+    correct: ['b'],
+    explanation:
+      'TRACE includes the gRPC and HTTP payloads between Terraform and its providers, so credentials and every attribute - including passwords - appear in plaintext. Before sharing any log, grep for credential patterns and redact; and prefer DEBUG unless the request bodies are genuinely needed. The same applies to `crash.log`.',
+  },
+]

@@ -31,6 +31,8 @@ export const ckadCourse: Course = {
     defaultMinutes: 120,
     passingScore: 66,
     questionCount: 20,
+    // CNCF publishes these weights, so the app can present them as official.
+    officialWeights: true,
     weights: {
       'design-build': 20,
       deployment: 20,
@@ -38,6 +40,15 @@ export const ckadCourse: Course = {
       'environment-security': 25,
       'services-networking': 20,
     },
+  },
+  copy: {
+    studyPath:
+      'Work top to bottom the first time through. Foundations and Exam Technique carry no official weight, but the five weighted domains assume the first and are much easier to finish in time with the last.',
+    provenance:
+      'Domain names and weights are taken from the official CNCF/Linux Foundation CKAD curriculum (verified 2026-09-03 against CKAD_Curriculum_v1.35).',
+    commandReference:
+      'Searchable kubectl, Helm and Kustomize cheat sheet with copy buttons and YAML templates.',
+    examWeighting: 'Timed papers weighted to the official domain percentages, scored per domain.',
   },
   sources: [
     {

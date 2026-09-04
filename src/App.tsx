@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ProgressProvider } from './lib/progress-provider'
 import { AppShell } from './components/layout/AppShell'
 import { PwaUpdater } from './components/PwaUpdater'
@@ -14,12 +14,14 @@ import { ExamReviewPage } from './pages/ExamReviewPage'
 import { CommandsPage } from './pages/CommandsPage'
 import { ProgressPage } from './pages/ProgressPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { CourseDashboardRedirect } from './pages/CourseDashboardRedirect'
 
 /**
  * The route table.
  *
- * Routes are namespaced under the course id (`/ckad/...`) so a second course
- * can be added later without touching any of these paths.
+ * Every course-scoped page lives under `/:courseId/...`, so installing a
+ * second course is purely a content change. Static paths such as `/progress`
+ * are ranked above the dynamic segment by the router, so they still win.
  *
  * `basename` comes from Vite's BASE_URL so the same build works at a domain
  * root and under a GitHub Pages repository sub-path.
@@ -32,17 +34,17 @@ export function App() {
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/progress" element={<ProgressPage />} />
-            <Route path="/ckad" element={<CourseDashboardPage />} />
-            <Route path="/ckad/topics/:topicId" element={<TopicPage />} />
-            <Route path="/ckad/search" element={<SearchPage />} />
-            <Route path="/ckad/practice" element={<PracticePage />} />
-            <Route path="/ckad/practice/:domainId" element={<QuizPage />} />
-            <Route path="/ckad/exams" element={<ExamsPage />} />
-            <Route path="/ckad/exams/run" element={<ExamRunnerPage />} />
-            <Route path="/ckad/exams/attempts/:attemptId" element={<ExamReviewPage />} />
-            <Route path="/ckad/commands" element={<CommandsPage />} />
+            <Route path="/:courseId" element={<CourseDashboardPage />} />
+            <Route path="/:courseId/topics/:topicId" element={<TopicPage />} />
+            <Route path="/:courseId/search" element={<SearchPage />} />
+            <Route path="/:courseId/practice" element={<PracticePage />} />
+            <Route path="/:courseId/practice/:domainId" element={<QuizPage />} />
+            <Route path="/:courseId/exams" element={<ExamsPage />} />
+            <Route path="/:courseId/exams/run" element={<ExamRunnerPage />} />
+            <Route path="/:courseId/exams/attempts/:attemptId" element={<ExamReviewPage />} />
+            <Route path="/:courseId/commands" element={<CommandsPage />} />
             {/* Convenience redirect for anyone who bookmarks the old path. */}
-            <Route path="/ckad/dashboard" element={<Navigate to="/ckad" replace />} />
+            <Route path="/:courseId/dashboard" element={<CourseDashboardRedirect />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

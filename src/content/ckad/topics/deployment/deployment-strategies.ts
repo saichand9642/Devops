@@ -30,6 +30,110 @@ export const deploymentStrategies: Topic = {
     'Readiness probes matter more here than anywhere: an unready canary Pod is simply not in the endpoint list, so a broken canary receives no traffic at all rather than failing 10% of requests.',
     'Two Services are often used alongside: a public one for the split, and a `-canary` Service selecting only `track: canary` so you can test the new version directly before exposing it.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Blue-green: switch the Service selector',
+      caption:
+        'Both versions run at once. The cutover is a one-field edit, and so is the rollback.',
+      nodes: [
+        {
+          label: 'Deployment app-blue, version: blue',
+          detail: 'Serving all traffic',
+          tone: 'accent',
+        },
+        {
+          label: 'Deploy app-green, version: green',
+          detail: 'Running but receiving nothing',
+          arrowLabel: 'no Service points at it',
+        },
+        {
+          label: 'Test green directly',
+          detail: 'port-forward, or a second Service for testing',
+        },
+        {
+          label: 'Patch the Service selector to green',
+          detail: 'One field: spec.selector.version',
+          arrowLabel: 'cutover',
+          tone: 'success',
+          branch: {
+            label: 'Something is wrong',
+            detail: 'Patch the selector back to blue - instant rollback',
+          },
+        },
+        {
+          label: 'Delete blue when confident',
+          detail: 'Or keep it as the next rollback target',
+        },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'Canary with plain Deployments',
+      caption:
+        'One Service, one shared label, two Deployments. Traffic share is set by replica counts, so 1 of 10 is roughly 10%.',
+      nodes: [
+        {
+          label: 'Service selects app: web',
+          detail: 'Deliberately does NOT select on version',
+          tone: 'accent',
+        },
+        {
+          label: 'web-stable: 9 replicas, app: web',
+          detail: 'Carries about 90% of requests',
+        },
+        {
+          label: 'web-canary: 1 replica, app: web',
+          detail: 'Same Service, so it gets about 10%',
+          arrowLabel: 'both are endpoints',
+        },
+        {
+          label: 'Watch the canary only',
+          detail: 'Filter logs and metrics by the version label',
+          branch: {
+            label: 'Errors on the canary',
+            detail: 'Scale web-canary to 0 - traffic drains immediately',
+          },
+        },
+        {
+          label: 'Shift the ratio',
+          detail: 'Scale canary up and stable down until canary is all of it',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Which strategy does the task want?',
+      caption:
+        'The wording gives it away: "no downtime" is rolling, "switch over" is blue-green, "small share of users" is canary.',
+      question: 'What matters most for this release?',
+      branches: [
+        {
+          condition: 'gradual, no extra objects, no downtime',
+          result: 'RollingUpdate',
+          detail: 'The built-in Deployment default',
+        },
+        {
+          condition: 'instant cutover and instant rollback',
+          result: 'Blue-green',
+          detail: 'Two Deployments, one Service selector to flip',
+          tone: 'accent',
+        },
+        {
+          condition: 'expose a small share of real traffic first',
+          result: 'Canary',
+          detail: 'Two Deployments sharing one Service, tuned by replicas',
+        },
+        {
+          condition: 'the app cannot run two versions at once',
+          result: 'strategy: Recreate',
+          detail: 'Accepts downtime; all old Pods die before new ones start',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Service',

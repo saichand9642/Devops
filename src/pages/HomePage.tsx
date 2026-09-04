@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { ckadCourse, plannedCourses } from '../content/courses'
+import { plannedCourses } from '../content/courses'
+import { courseIdForTopic, courseIndex, courseIndexes } from '../content/registry'
 import { useProgress } from '../lib/use-progress'
 import {
   courseCompletion,
@@ -10,6 +11,7 @@ import {
 } from '../lib/stats'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { Badge } from '../components/ui/Badge'
+import { RichText } from '../components/ui/RichText'
 import type { BadgeTone } from '../components/ui/Badge'
 import type { ReadinessLevel } from '../lib/stats'
 
@@ -22,27 +24,55 @@ const readinessTone: Record<ReadinessLevel, BadgeTone> = {
 
 export function HomePage() {
   const { state } = useProgress()
-  const completion = courseCompletion(ckadCourse, state)
-  const readiness = readinessFor(ckadCourse, state)
-  const suggestion = dailySuggestion(ckadCourse, state)
+
+  /*
+   * Home belongs to no single course, so the focused sections (readiness,
+   * today's suggestion) follow whichever course you last opened a lesson in.
+   * Falling back to the first course keeps a brand-new install sensible.
+   */
+  const lastCourseId = state.lastVisitedTopicId
+    ? courseIdForTopic(state.lastVisitedTopicId)
+    : undefined
+  const active = courseIndex(lastCourseId) ?? courseIndexes[0]
+  const activeCourse = active.course
+
+  /* Overall progress spans every installed course, not just the active one. */
+  const perCourse = courseIndexes.map((entry) => ({
+    entry,
+    completion: courseCompletion(entry.course, state),
+    practice: practiceStats(entry.course, state),
+  }))
+  const lessonsDone = perCourse.reduce((sum, item) => sum + item.completion.completed, 0)
+  const lessonsTotal = perCourse.reduce((sum, item) => sum + item.completion.total, 0)
+  const overallPercent = lessonsTotal === 0 ? 0 : Math.round((lessonsDone / lessonsTotal) * 100)
+  const answered = perCourse.reduce((sum, item) => sum + item.practice.answered, 0)
+  const correct = perCourse.reduce(
+    (sum, item) => sum + Math.round((item.practice.accuracy / 100) * item.practice.answered),
+    0,
+  )
+  const overallAccuracy = answered === 0 ? 0 : Math.round((correct / answered) * 100)
+
+  const readiness = readinessFor(activeCourse, state)
+  const suggestion = dailySuggestion(activeCourse, state)
   const streak = studyStreak(state)
-  const practice = practiceStats(ckadCourse, state)
-  const attempts = state.exams.filter((attempt) => attempt.courseId === ckadCourse.id)
-  const bestScore = attempts.reduce((best, attempt) => Math.max(best, attempt.scorePercent), 0)
+  const bestScore = state.exams.reduce((best, attempt) => Math.max(best, attempt.scorePercent), 0)
 
   const continueTo = state.lastVisitedTopicId
-    ? `${ckadCourse.route}/topics/${state.lastVisitedTopicId}`
+    ? `${activeCourse.route}/topics/${state.lastVisitedTopicId}`
     : suggestion.topic
-      ? `${ckadCourse.route}/topics/${suggestion.topic.id}`
-      : ckadCourse.route
+      ? `${activeCourse.route}/topics/${suggestion.topic.id}`
+      : activeCourse.route
+
+  const courseWord = courseIndexes.length === 1 ? 'course' : 'courses'
 
   return (
     <div className="page stack-lg">
       <header className="page-header">
         <h1>DevOps Learning Hub</h1>
         <p className="muted">
-          A study app for DevOps certifications, built to work offline on a phone. Course one is
-          CKAD.
+          A study app for DevOps certifications, built to work offline on a phone.{' '}
+          {courseIndexes.length} {courseWord} installed:{' '}
+          {courseIndexes.map((entry) => entry.course.examCode).join(' and ')}.
         </p>
       </header>
 
@@ -54,25 +84,25 @@ export function HomePage() {
           <Badge tone={readinessTone[readiness.level]}>{readiness.label}</Badge>
         </div>
         <ProgressBar
-          value={completion.percent}
-          label={`${completion.completed} of ${completion.total} lessons complete`}
+          value={overallPercent}
+          label={`${lessonsDone} of ${lessonsTotal} lessons complete across all ${courseWord}`}
           showValue
           large
-          tone={completion.percent === 100 ? 'success' : 'primary'}
+          tone={overallPercent === 100 ? 'success' : 'primary'}
         />
         <div className="stat-grid">
           <div className="stat">
-            <div className="stat__value">{completion.percent}%</div>
+            <div className="stat__value">{overallPercent}%</div>
             <div className="stat__label">Lessons complete</div>
           </div>
           <div className="stat">
-            <div className="stat__value">{practice.answered}</div>
+            <div className="stat__value">{answered}</div>
             <div className="stat__label">
-              Practice answered{practice.answered > 0 ? ` · ${practice.accuracy}% correct` : ''}
+              Practice answered{answered > 0 ? ` · ${overallAccuracy}% correct` : ''}
             </div>
           </div>
           <div className="stat">
-            <div className="stat__value">{attempts.length === 0 ? '—' : `${bestScore}%`}</div>
+            <div className="stat__value">{state.exams.length === 0 ? '—' : `${bestScore}%`}</div>
             <div className="stat__label">Best mock exam</div>
           </div>
           <div className="stat">
@@ -82,19 +112,17 @@ export function HomePage() {
         </div>
         <div className="row">
           <Link className="btn" to={continueTo}>
-            {state.lastVisitedTopicId || completion.completed > 0
-              ? 'Continue learning'
-              : 'Start learning'}
+            {state.lastVisitedTopicId || lessonsDone > 0 ? 'Continue learning' : 'Start learning'}
           </Link>
-          <Link className="btn btn--secondary" to={`${ckadCourse.route}`}>
-            CKAD dashboard
+          <Link className="btn btn--secondary" to={activeCourse.route}>
+            {activeCourse.examCode} dashboard
           </Link>
         </div>
       </section>
 
       <section aria-labelledby="readiness" className="card stack">
         <h2 id="readiness" className="card__title">
-          Exam readiness
+          {activeCourse.examCode} exam readiness
         </h2>
         <p className="muted" style={{ marginBottom: 0 }}>
           {readiness.headline}
@@ -134,11 +162,11 @@ export function HomePage() {
             </p>
             <Link
               className="card card--interactive"
-              to={`${ckadCourse.route}/topics/${suggestion.topic.id}`}
+              to={`${activeCourse.route}/topics/${suggestion.topic.id}`}
             >
               <strong>{suggestion.topic.title}</strong>
               <p className="subtle" style={{ margin: '0.25rem 0 0' }}>
-                {suggestion.topic.oneLiner}
+                <RichText text={suggestion.topic.oneLiner} />
               </p>
               <p className="subtle" style={{ margin: '0.4rem 0 0' }}>
                 About {suggestion.minutes} minutes
@@ -154,16 +182,16 @@ export function HomePage() {
           {suggestion.drillDomainId ? (
             <Link
               className="btn btn--secondary"
-              to={`${ckadCourse.route}/practice/${suggestion.drillDomainId}`}
+              to={`${activeCourse.route}/practice/${suggestion.drillDomainId}`}
             >
               {suggestion.drillLabel}
             </Link>
           ) : (
-            <Link className="btn btn--secondary" to={`${ckadCourse.route}/practice`}>
+            <Link className="btn btn--secondary" to={`${activeCourse.route}/practice`}>
               {suggestion.drillLabel}
             </Link>
           )}
-          <Link className="btn btn--secondary" to={`${ckadCourse.route}/exams`}>
+          <Link className="btn btn--secondary" to={`${activeCourse.route}/exams`}>
             Mock exams
           </Link>
         </div>
@@ -172,25 +200,32 @@ export function HomePage() {
       <section aria-labelledby="courses" className="stack">
         <h2 id="courses">Courses</h2>
         <div className="card-grid card-grid--2">
-          <Link className="card card--interactive stack-sm" to={ckadCourse.route}>
-            <div className="row">
-              <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
-                {ckadCourse.icon}
-              </span>
-              <Badge tone="success">Available</Badge>
-              <Badge>{ckadCourse.targetVersion}</Badge>
-            </div>
-            <strong className="card__title">{ckadCourse.title}</strong>
-            <p className="subtle" style={{ margin: 0 }}>
-              {ckadCourse.subtitle}
-            </p>
-            <ProgressBar value={completion.percent} showValue />
-            <p className="subtle" style={{ margin: 0 }}>
-              {ckadCourse.topics.length} lessons · {ckadCourse.questions.length} practice questions
-              · {ckadCourse.commandGroups.reduce((sum, group) => sum + group.entries.length, 0)}{' '}
-              reference commands
-            </p>
-          </Link>
+          {perCourse.map(({ entry, completion }) => (
+            <Link
+              className="card card--interactive stack-sm"
+              key={entry.course.id}
+              to={entry.course.route}
+            >
+              <div className="row">
+                <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
+                  {entry.course.icon}
+                </span>
+                <Badge tone="success">Available</Badge>
+                <Badge>{entry.course.targetVersion}</Badge>
+              </div>
+              <strong className="card__title">{entry.course.title}</strong>
+              <p className="subtle" style={{ margin: 0 }}>
+                {entry.course.subtitle}
+              </p>
+              <ProgressBar value={completion.percent} showValue />
+              <p className="subtle" style={{ margin: 0 }}>
+                {entry.course.topics.length} lessons · {entry.course.questions.length} practice
+                questions ·{' '}
+                {entry.course.commandGroups.reduce((sum, group) => sum + group.entries.length, 0)}{' '}
+                reference commands
+              </p>
+            </Link>
+          ))}
 
           {plannedCourses.map((course) => (
             <div className="card stack-sm" key={course.id} aria-label={`${course.title} (planned)`}>
@@ -218,19 +253,27 @@ export function HomePage() {
         </h2>
         <p className="disclaimer">
           <strong>Independent learning tool.</strong> This app is not affiliated with, endorsed by
-          or sponsored by the Cloud Native Computing Foundation or the Linux Foundation. CKAD is
-          their certification; this is a study aid built around the publicly published curriculum.
-          All practice questions, labs and mock exams here are original material written for this
-          app - none are actual exam questions. Always check the official curriculum before your
-          exam:{' '}
-          {ckadCourse.sources.map((source, index) => (
-            <span key={source.url}>
-              {index > 0 && ' · '}
-              <a href={source.url} target="_blank" rel="noreferrer noopener">
-                {source.title}
-              </a>
-            </span>
-          ))}
+          or sponsored by any certification body, including the Cloud Native Computing Foundation,
+          the Linux Foundation and HashiCorp. The certifications are theirs; this is a study aid
+          built around their publicly published curricula. All practice questions, labs and mock
+          exams here are original material written for this app - none are actual exam questions.
+          Always check the official curriculum before your exam:{' '}
+          {courseIndexes
+            .flatMap((entry) =>
+              entry.course.sources.slice(0, 2).map((source) => ({
+                key: `${entry.course.id}-${source.url}`,
+                label: `${entry.course.examCode}: ${source.title}`,
+                url: source.url,
+              })),
+            )
+            .map((source, index) => (
+              <span key={source.key}>
+                {index > 0 && ' · '}
+                <a href={source.url} target="_blank" rel="noreferrer noopener">
+                  {source.label}
+                </a>
+              </span>
+            ))}
           .
         </p>
       </section>

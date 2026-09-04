@@ -1272,3 +1272,223 @@
   flex-wrap: wrap;
   gap: 0.4rem;
 }
+
+/* ------------------------------------------------------------------ diagrams
+ *
+ * Diagrams are inline SVG whose colours all come from the design tokens, so
+ * they follow the light/dark theme without a second set of assets. The SVG is
+ * drawn at its natural pixel size and the canvas scrolls horizontally when the
+ * viewport is narrower - scaling to fit would shrink the labels below the
+ * 11px floor and make wide diagrams unreadable on a phone.
+ */
+
+.diagram-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+
+.diagram {
+  margin: 0;
+  padding: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.diagram-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.diagram-kind {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary-text);
+  background: var(--primary-soft);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.diagram-title {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.diagram-canvas {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0 6px;
+}
+
+/*
+ * Auto inline margins centre a diagram that fits and resolve to zero when it
+ * does not, so nothing is ever scrolled out of reach on the left.
+ */
+.dg-svg {
+  display: block;
+  margin-inline: auto;
+  font-family: var(--font-sans);
+  max-width: none;
+}
+
+.diagram-caption {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  overflow-wrap: break-word;
+}
+
+.diagram-alt > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 6px 2px;
+  min-height: var(--tap-target);
+  display: flex;
+  align-items: center;
+}
+
+.diagram-alt > summary:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+}
+
+.diagram-alt-list {
+  margin: 4px 0 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 5px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.diagram-alt-list li {
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* Boxes */
+.dg-box {
+  fill: var(--bg-sunken);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.dg-box--accent {
+  fill: var(--primary-soft);
+  stroke: var(--primary);
+}
+
+.dg-box--success {
+  fill: var(--success-soft);
+  stroke: var(--success);
+}
+
+.dg-box--warning {
+  fill: var(--warning-soft);
+  stroke: var(--warning);
+}
+
+.dg-box--danger {
+  fill: var(--danger-soft);
+  stroke: var(--danger);
+}
+
+.dg-box--muted {
+  fill: transparent;
+  stroke: var(--border);
+  stroke-dasharray: 5 4;
+}
+
+/* Alternating fills make containment legible without extra colour meaning. */
+.dg-box--default.dg-box--depth1,
+.dg-box--default.dg-box--depth3 {
+  fill: var(--bg-elevated);
+}
+
+/* Text */
+.dg-label {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dg-detail {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+
+.dg-edge-label {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+
+.dg-condition {
+  fill: var(--primary-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Connectors */
+.dg-line {
+  stroke: var(--border-strong);
+  stroke-width: 1.6;
+  fill: none;
+}
+
+.dg-line--dashed {
+  stroke-dasharray: 5 4;
+}
+
+.dg-line--spine {
+  stroke-width: 1.6;
+}
+
+.dg-line--danger {
+  stroke: var(--danger);
+}
+
+.dg-lifeline {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+}
+
+.dg-head {
+  fill: var(--border-strong);
+  stroke: none;
+}
+
+.dg-head--danger {
+  fill: var(--danger);
+}
+
+/* Shown only when the canvas is actually scrollable, measured at runtime. */
+.diagram-hint {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+
+/* A heading inside a card that groups several meters, e.g. per course. */
+.subhead {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+}

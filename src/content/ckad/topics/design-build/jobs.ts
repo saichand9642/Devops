@@ -30,6 +30,66 @@ export const jobs: Topic = {
     '`ttlSecondsAfterFinished` starts counting when the Job reaches Complete or Failed, then the Job *and its Pods* are garbage-collected.',
     '`suspend: true` pauses a Job - existing Pods are deleted and no new ones are created until you set it back to false.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'A Job retries, then gives up',
+      caption:
+        'backoffLimit counts Pod failures, not seconds. Once it is reached the Job is Failed for good and will not try again.',
+      nodes: [
+        { label: 'Job created', detail: 'completions: 1, backoffLimit: 4' },
+        {
+          label: 'Job controller creates a Pod',
+          detail: 'restartPolicy must be OnFailure or Never',
+          tone: 'accent',
+        },
+        {
+          label: 'Container exits 0',
+          detail: 'Pod phase Succeeded',
+          arrowLabel: 'success',
+          tone: 'success',
+          branch: {
+            label: 'Exits non-zero',
+            detail: 'Counts one failure, backoff doubles: 10s, 20s, 40s...',
+          },
+        },
+        {
+          label: 'Job COMPLETIONS reaches 1/1',
+          detail: 'Pod is kept so you can read its logs',
+          tone: 'success',
+          branch: {
+            label: 'backoffLimit exceeded',
+            detail: 'Job condition Failed; no more Pods are created',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Choosing completions and parallelism',
+      caption:
+        'These two numbers are the whole of Job design. Read the task for "how many" and "at once".',
+      question: 'How much work is there, and can it run at once?',
+      branches: [
+        {
+          condition: 'one task, run it once',
+          result: 'completions: 1, parallelism: 1',
+          detail: 'The default. Omit both fields.',
+        },
+        {
+          condition: 'a fixed number of identical tasks',
+          result: 'completions: N, parallelism: M',
+          detail: 'N Pods must succeed, at most M at a time',
+          tone: 'accent',
+        },
+        {
+          condition: 'workers pull from a queue until it is empty',
+          result: 'parallelism only',
+          detail: 'Omit completions; any worker exiting 0 finishes the Job',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Job',

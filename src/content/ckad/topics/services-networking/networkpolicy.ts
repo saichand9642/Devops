@@ -40,6 +40,76 @@ export const networkpolicy: Topic = {
     '`ipBlock` is evaluated against the source IP as the CNI sees it, which for in-cluster traffic is the Pod IP. Selecting a Service cluster IP with `ipBlock` does not work as people expect.',
     'A policy cannot select Pods in another namespace with `podSelector`. To allow traffic from a specific Pod in another namespace you combine `namespaceSelector` and `podSelector` in the same list item.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'How a NetworkPolicy changes the default',
+      caption:
+        'The switch flips per Pod, per direction. Selecting a Pod for Ingress does nothing to its Egress.',
+      nodes: [
+        {
+          label: 'No policy selects the Pod',
+          detail: 'All traffic allowed, in and out',
+          tone: 'success',
+        },
+        {
+          label: 'One policy now selects it',
+          detail: 'podSelector matches the Pod labels',
+          arrowLabel: 'you apply a policy',
+          tone: 'accent',
+        },
+        {
+          label: 'That direction becomes deny-by-default',
+          detail: 'Listing Ingress in policyTypes denies all ingress',
+          arrowLabel: 'the switch flips',
+        },
+        {
+          label: 'Only the listed rules are allowed',
+          detail: 'Rules across all matching policies are unioned',
+          branch: {
+            label: 'You forgot DNS egress',
+            detail: 'A deny-all-egress policy breaks name resolution first',
+          },
+        },
+        {
+          label: 'Everything else is dropped silently',
+          detail: 'Connections time out. There are no logs and no errors.',
+          tone: 'warning',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Reading the selectors correctly',
+      caption:
+        'The most-missed detail: namespaceSelector and podSelector in ONE list item mean AND. As two items they mean OR.',
+      question: 'Which selector is where?',
+      branches: [
+        {
+          condition: 'spec.podSelector',
+          result: 'Which Pods this policy protects',
+          detail: 'Empty {} means every Pod in the namespace',
+          tone: 'accent',
+        },
+        {
+          condition: 'ingress.from[].podSelector',
+          result: 'Who may connect in',
+          detail: 'Pods in the SAME namespace unless you add a namespaceSelector',
+        },
+        {
+          condition: 'one list item with both selectors',
+          result: 'AND',
+          detail: 'Pods matching the labels IN namespaces matching the labels',
+        },
+        {
+          condition: 'two separate list items',
+          result: 'OR',
+          detail: 'A very easy way to allow far more than you meant to',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'NetworkPolicy',

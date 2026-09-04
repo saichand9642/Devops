@@ -40,6 +40,64 @@ export const crdsAndOperators: Topic = {
     'RBAC for custom resources uses the CRD\'s group: `apiGroups: ["shop.example.com"]`, `resources: ["backups"]`. The built-in `view`/`edit`/`admin` roles do *not* automatically cover custom resources unless the CRD ships aggregation labels.',
     'Deleting a CRD deletes every custom resource of that kind, cluster-wide. Finalizers set by an operator can make that deletion hang until the operator releases them.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'A CRD adds a kind; a controller gives it meaning',
+      caption:
+        'Install a CRD and kubectl accepts the new kind immediately - and does nothing with it. The controller is what makes it real.',
+      nodes: [
+        {
+          label: 'Apply the CustomResourceDefinition',
+          detail: 'Declares group, version, kind, and a schema',
+          tone: 'accent',
+        },
+        {
+          label: 'The API server serves a new endpoint',
+          detail: 'kubectl api-resources now lists your kind',
+          arrowLabel: 'API extended',
+        },
+        {
+          label: 'You create a custom resource',
+          detail: 'kubectl apply -f my-backup.yaml',
+        },
+        {
+          label: 'It is stored in etcd - and nothing happens',
+          detail: 'A CRD alone is only a typed record',
+          tone: 'warning',
+          branch: {
+            label: 'No controller installed',
+            detail: 'The object sits there forever. This is expected.',
+          },
+        },
+        {
+          label: 'The operator reconciles it',
+          detail: 'Watches your kind, creates real Pods and Services',
+          arrowLabel: 'controller running',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'sequence',
+      title: 'The reconcile loop every operator runs',
+      caption:
+        'Observe, compare, act, record. Every Kubernetes controller - built-in or custom - is this loop.',
+      participants: [
+        { id: 'op', label: 'Operator' },
+        { id: 'api', label: 'API server' },
+        { id: 'real', label: 'Real objects' },
+      ],
+      messages: [
+        { from: 'op', to: 'api', label: 'watch my custom kind' },
+        { from: 'api', to: 'op', label: 'a Backup was created', kind: 'return' },
+        { from: 'op', to: 'op', label: 'compare spec with what exists' },
+        { from: 'op', to: 'real', label: 'create the Job that does the backup' },
+        { from: 'real', to: 'op', label: 'Job succeeded', kind: 'return' },
+        { from: 'op', to: 'api', label: 'write status.phase: Completed' },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'CustomResourceDefinition',

@@ -28,6 +28,81 @@ export const kubernetesArchitecture: Topic = {
     'Flow of one `kubectl apply -f deployment.yaml`: kubectl → API server (authentication → authorization → admission control → validation → write to etcd) → Deployment controller creates a ReplicaSet → ReplicaSet controller creates Pods → scheduler binds each Pod to a node → kubelet on that node pulls the image and starts containers → kubelet reports Pod status → `kubectl get pods` shows Running.',
     'Nothing in that chain is synchronous. `kubectl apply` returning `created` only means the API server stored the object. Everything after that is asynchronous, which is exactly why `kubectl rollout status` and `kubectl get pods -w` exist.',
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'What lives inside a cluster',
+      caption:
+        'You only ever talk to the API server. Everything else reacts to what the API server stores.',
+      root: {
+        label: 'Kubernetes cluster',
+        detail: 'One API, many machines',
+        children: [
+          {
+            label: 'Control plane',
+            detail: 'Decides what should be running',
+            tone: 'accent',
+            children: [
+              { label: 'kube-apiserver', detail: 'The only door in' },
+              { label: 'etcd', detail: 'Stores every object' },
+              { label: 'kube-scheduler', detail: 'Picks a node for each Pod' },
+              {
+                label: 'kube-controller-manager',
+                detail: 'Deployment, ReplicaSet, Job, endpoints controllers',
+              },
+            ],
+          },
+          {
+            label: 'Worker node',
+            detail: 'Actually runs your containers',
+            children: [
+              { label: 'kubelet', detail: 'Starts containers, runs your probes' },
+              { label: 'kube-proxy', detail: 'Makes Service IPs work on this node' },
+              { label: 'containerd', detail: 'Pulls images, runs containers' },
+              {
+                label: 'Pod',
+                detail: 'Your container(s) plus a shared network namespace',
+                tone: 'success',
+              },
+            ],
+          },
+          {
+            label: 'Add-ons',
+            detail: 'Cluster features you depend on as a developer',
+            tone: 'muted',
+            children: [
+              { label: 'CoreDNS', detail: 'DNS name for every Service' },
+              { label: 'CNI plugin', detail: 'Pod IPs and NetworkPolicy enforcement' },
+              { label: 'Ingress controller', detail: 'Turns Ingress into real HTTP routing' },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      kind: 'sequence',
+      title: 'What happens during kubectl apply',
+      caption:
+        'Only step 2 is finished when kubectl prints "created". Everything after it is asynchronous - which is why rollout status exists.',
+      participants: [
+        { id: 'you', label: 'kubectl' },
+        { id: 'api', label: 'API server' },
+        { id: 'ctrl', label: 'Controllers' },
+        { id: 'node', label: 'kubelet' },
+      ],
+      messages: [
+        { from: 'you', to: 'api', label: 'POST Deployment' },
+        { from: 'api', to: 'api', label: 'authn, authz, admission, validate, write etcd' },
+        { from: 'api', to: 'you', label: '"deployment created"', kind: 'return' },
+        { from: 'api', to: 'ctrl', label: 'watch event' },
+        { from: 'ctrl', to: 'api', label: 'create ReplicaSet, then Pods' },
+        { from: 'ctrl', to: 'api', label: 'scheduler writes spec.nodeName' },
+        { from: 'api', to: 'node', label: 'assigned Pod appears' },
+        { from: 'node', to: 'node', label: 'pull image, start container, run probes' },
+        { from: 'node', to: 'api', label: 'Pod status: Running', kind: 'return' },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

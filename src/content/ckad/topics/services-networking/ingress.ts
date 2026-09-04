@@ -31,6 +31,67 @@ export const ingress: Topic = {
     'Path rewriting is not part of the Ingress API. `nginx.ingress.kubernetes.io/rewrite-target` and equivalents are controller-specific annotations, and they usually require `pathType: ImplementationSpecific` with a capture group.',
     'The Gateway API is the successor for advanced routing (`HTTPRoute`, `Gateway`), but Ingress remains what CKAD tests.',
   ],
+  diagrams: [
+    {
+      kind: 'sequence',
+      title: 'From browser to Pod through an Ingress',
+      caption:
+        'The Ingress object is only configuration. The controller Pod is what actually receives and forwards the request.',
+      participants: [
+        { id: 'user', label: 'Browser' },
+        { id: 'ctl', label: 'Ingress controller' },
+        { id: 'svc', label: 'Service' },
+        { id: 'pod', label: 'Pod' },
+      ],
+      messages: [
+        { from: 'user', to: 'ctl', label: 'GET shop.example.com/cart' },
+        { from: 'ctl', to: 'ctl', label: 'match host, then path rule' },
+        { from: 'ctl', to: 'svc', label: 'forward to cart-svc:80' },
+        { from: 'svc', to: 'pod', label: 'to a Ready endpoint:8080' },
+        { from: 'pod', to: 'user', label: 'response back through the controller', kind: 'return' },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'Why an Ingress returns 404 or has no address',
+      caption:
+        'Work outward from the Pod. An Ingress can only be as healthy as the Service it names.',
+      nodes: [
+        {
+          label: 'ADDRESS column is empty',
+          detail: 'No controller has claimed this Ingress',
+          tone: 'warning',
+          branch: {
+            label: 'ingressClassName missing',
+            detail: 'Set it, or mark an IngressClass as default',
+          },
+        },
+        {
+          label: 'Controller has claimed it',
+          detail: 'An address or hostname appears',
+          arrowLabel: 'class matches',
+        },
+        {
+          label: 'Does the backend Service exist?',
+          detail: 'Same namespace as the Ingress, exact name and port',
+          branch: {
+            label: 'Name or port wrong',
+            detail: '404 or 503 - describe ingress reports the bad backend',
+          },
+        },
+        {
+          label: 'Does the Service have endpoints?',
+          detail: 'kubectl get endpoints <service>',
+          arrowLabel: 'Service exists',
+          branch: {
+            label: 'Empty endpoints',
+            detail: 'A Service problem, not an Ingress problem. Fix that first.',
+          },
+        },
+        { label: 'Request reaches the Pod', tone: 'success' },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Ingress',

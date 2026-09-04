@@ -31,6 +31,83 @@ export const servicePortsAndEndpoints: Topic = {
     'During a rolling update, terminating Pods are marked `serving: true, terminating: true` for their grace period, which lets kube-proxy drain them rather than cutting connections abruptly.',
     "For a selector-less Service you create an EndpointSlice with a matching `kubernetes.io/service-name` label and the addresses you want. kube-proxy then forwards the Service's cluster IP to those addresses, including port translation.",
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'The three ports, in the order traffic meets them',
+      caption:
+        'port is where you knock, targetPort is where the container listens. Mixing them up produces a Service that connects to nothing.',
+      nodes: [
+        {
+          label: 'Client connects to the Service',
+          detail: 'http://web:80 - this is spec.ports[].port',
+          tone: 'accent',
+        },
+        {
+          label: 'kube-proxy rewrites the destination',
+          detail: 'Picks one Ready endpoint',
+          arrowLabel: 'DNAT to a Pod IP',
+        },
+        {
+          label: 'Traffic arrives at targetPort',
+          detail: 'spec.ports[].targetPort - the port in the container',
+          branch: {
+            label: 'targetPort is wrong',
+            detail: 'Connection refused, although ENDPOINTS looks healthy',
+          },
+        },
+        {
+          label: 'The container is listening there',
+          detail: 'containerPort is documentation; the process must really listen',
+          tone: 'success',
+        },
+        {
+          label: 'nodePort, only for type NodePort',
+          detail: 'A third port, 30000-32767, opened on every node',
+          arrowLabel: 'external entry',
+        },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'Why ENDPOINTS is empty',
+      caption:
+        'kubectl get endpoints is the fastest Service diagnosis there is. Empty means no Pod both matches and is Ready.',
+      nodes: [
+        {
+          label: 'kubectl get endpoints web shows <none>',
+          tone: 'warning',
+        },
+        {
+          label: 'Do the labels match?',
+          detail: 'Compare Service spec.selector with the Pod labels',
+          branch: {
+            label: 'Selector typo',
+            detail: 'Test it: kubectl get pods -l app=web',
+          },
+        },
+        {
+          label: 'Are the Pods Ready?',
+          detail: 'READY 0/1 keeps a Pod out of Endpoints',
+          arrowLabel: 'labels match',
+          branch: {
+            label: 'readinessProbe failing',
+            detail: 'Fix the probe and the endpoint appears',
+          },
+        },
+        {
+          label: 'Same namespace?',
+          detail: 'A Service only ever selects Pods in its own namespace',
+          arrowLabel: 'Pods are Ready',
+          branch: {
+            label: 'Pods are elsewhere',
+            detail: 'Move the Service, or use an ExternalName',
+          },
+        },
+        { label: 'Endpoints populated', tone: 'success' },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Service',

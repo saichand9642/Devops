@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { CodeLanguage } from '../../content/types'
 import { highlightCode } from '../../lib/highlight'
 import { CopyButton } from './CopyButton'
+import { RichText } from './RichText'
 
 interface CodeBlockProps {
   code: string
@@ -40,7 +41,11 @@ export function CodeBlock({
         {/* highlight.js escapes its own output, so this markup is safe. */}
         <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} />
       </pre>
-      {explanation && <p className="code-block__explanation">{explanation}</p>}
+      {explanation && (
+        <p className="code-block__explanation">
+          <RichText text={explanation} />
+        </p>
+      )}
       {placeholders && placeholders.length > 0 && (
         <div className="code-block__placeholders">
           <strong>Replace:</strong>

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
-import { domainById } from '../content/ckad/domains'
-import { questionById } from '../content/ckad/questions'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { useProgress } from '../lib/use-progress'
 import { gradeQuestion, percent, round1 } from '../lib/scoring'
 import type { ExamAnswerRecord, ExamAttempt } from '../lib/storage'
@@ -21,6 +21,13 @@ type Filter = 'all' | 'incorrect' | 'unverified'
  * self-verified task earns its partial credit.
  */
 export function ExamReviewPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <ExamReviewView catalog={catalog} />
+}
+
+function ExamReviewView({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const { attemptId } = useParams<{ attemptId: string }>()
   const { state, updateExamAttempt, recordAnswer } = useProgress()
   const [filter, setFilter] = useState<Filter>('all')
@@ -40,7 +47,7 @@ export function ExamReviewPage() {
           title="Attempt not found"
           description="This attempt is not stored on this device. Attempt history is local, so it does not transfer between browsers unless you export and import it."
           action={
-            <Link className="btn" to={`${ckadCourse.route}/exams`}>
+            <Link className="btn" to={`${course.route}/exams`}>
               Back to mock exams
             </Link>
           }
@@ -74,7 +81,7 @@ export function ExamReviewPage() {
   }
 
   const updateTaskResponse = (answer: ExamAnswerRecord, next: string[]) => {
-    const question = questionById.get(answer.questionId)
+    const question = catalog.questionById.get(answer.questionId)
     if (!question) return
     const grade = gradeQuestion(question, next)
     const updated = answers.map((candidate) =>
@@ -87,13 +94,13 @@ export function ExamReviewPage() {
   }
 
   const unverified = answers.filter((answer) => {
-    const question = questionById.get(answer.questionId)
+    const question = catalog.questionById.get(answer.questionId)
     return question?.kind === 'task' && answer.response.length === 0
   })
 
   const visible = answers.filter((answer) => {
     if (filter === 'all') return true
-    const question = questionById.get(answer.questionId)
+    const question = catalog.questionById.get(answer.questionId)
     if (filter === 'unverified') return question?.kind === 'task' && answer.response.length === 0
     return answer.earned < answer.total
   })
@@ -101,7 +108,7 @@ export function ExamReviewPage() {
   const domainRows = Object.entries(attempt.byDomain)
     .map(([domainId, value]) => ({
       domainId,
-      domain: domainById.get(domainId),
+      domain: catalog.domainById.get(domainId),
       ...value,
       percent: percent(value.earned, value.total),
     }))
@@ -113,9 +120,9 @@ export function ExamReviewPage() {
     <div className="page stack-lg">
       <header className="page-header">
         <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <Link to={ckadCourse.route}>CKAD</Link>
+          <Link to={course.route}>{course.examCode}</Link>
           <span aria-hidden="true">/</span>
-          <Link to={`${ckadCourse.route}/exams`}>Mock exams</Link>
+          <Link to={`${course.route}/exams`}>Mock exams</Link>
           <span aria-hidden="true">/</span>
           <span>Result</span>
         </nav>
@@ -190,7 +197,7 @@ export function ExamReviewPage() {
           <p className="subtle" style={{ marginBottom: 0 }}>
             Weakest domain: <strong>{weakest.domain?.shortTitle ?? weakest.domainId}</strong> at{' '}
             {weakest.percent}%.{' '}
-            <Link to={`${ckadCourse.route}/practice/${weakest.domainId}`}>Drill that domain →</Link>
+            <Link to={`${course.route}/practice/${weakest.domainId}`}>Drill that domain →</Link>
           </p>
         )}
       </section>
@@ -237,7 +244,7 @@ export function ExamReviewPage() {
         ) : (
           <div className="stack">
             {visible.map((answer) => {
-              const question = questionById.get(answer.questionId)
+              const question = catalog.questionById.get(answer.questionId)
               if (!question) return null
               const originalIndex = answers.findIndex((a) => a.questionId === answer.questionId)
               return (
@@ -251,7 +258,7 @@ export function ExamReviewPage() {
                     index={originalIndex + 1}
                     total={answers.length}
                   />
-                  <Link className="subtle" to={`${ckadCourse.route}/topics/${question.topicId}`}>
+                  <Link className="subtle" to={`${course.route}/topics/${question.topicId}`}>
                     Read the lesson for this question →
                   </Link>
                 </div>
@@ -262,10 +269,10 @@ export function ExamReviewPage() {
       </section>
 
       <div className="lesson-nav">
-        <Link className="btn btn--secondary" to={`${ckadCourse.route}/exams`}>
+        <Link className="btn btn--secondary" to={`${course.route}/exams`}>
           ← All attempts
         </Link>
-        <Link className="btn" to={`${ckadCourse.route}/exams`}>
+        <Link className="btn" to={`${course.route}/exams`}>
           Take another exam →
         </Link>
       </div>

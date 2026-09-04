@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
+import { courseIndexes } from '../content/registry'
 import { useProgress } from '../lib/use-progress'
 import { courseCompletion, domainStats, practiceStats, studyStreak } from '../lib/stats'
 import { parseImport, toExportEnvelope } from '../lib/storage'
+import { weightBadge } from '../lib/domain-label'
 import { readFileAsText } from '../lib/read-file'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { Badge } from '../components/ui/Badge'
@@ -17,11 +18,26 @@ export function ProgressPage() {
   const [notice, setNotice] = useState<Notice>(null)
   const [pendingImport, setPendingImport] = useState<ReturnType<typeof parseImport> | null>(null)
 
-  const completion = courseCompletion(ckadCourse, state)
-  const practice = practiceStats(ckadCourse, state)
-  const domains = domainStats(ckadCourse, state)
+  /* Every figure on this page spans all installed courses. */
+  const perCourse = courseIndexes.map((entry) => ({
+    course: entry.course,
+    completion: courseCompletion(entry.course, state),
+    practice: practiceStats(entry.course, state),
+    domains: domainStats(entry.course, state),
+    attempts: state.exams.filter((attempt) => attempt.courseId === entry.course.id),
+  }))
+  const completed = perCourse.reduce((sum, item) => sum + item.completion.completed, 0)
+  const total = perCourse.reduce((sum, item) => sum + item.completion.total, 0)
+  const completion = {
+    completed,
+    total,
+    percent: total === 0 ? 0 : Math.round((completed / total) * 100),
+  }
+  const practice = {
+    answered: perCourse.reduce((sum, item) => sum + item.practice.answered, 0),
+  }
   const streak = studyStreak(state)
-  const attempts = state.exams.filter((attempt) => attempt.courseId === ckadCourse.id)
+  const attempts = state.exams
 
   const exportProgress = () => {
     const envelope = toExportEnvelope(state)
@@ -165,7 +181,7 @@ export function ProgressPage() {
         </div>
         <ProgressBar
           value={completion.percent}
-          label="Overall CKAD completion"
+          label="Overall completion across all courses"
           showValue
           large
           tone={completion.percent === 100 ? 'success' : 'primary'}
@@ -180,21 +196,28 @@ export function ProgressPage() {
         <h2 id="per-domain" className="card__title">
           Completion by domain
         </h2>
-        {domains.map((entry) => (
-          <div className="stack-sm" key={entry.domain.id}>
-            <div className="meter-row">
-              <span>
-                {entry.domain.shortTitle}
-                {entry.domain.examWeight !== null ? ` · ${entry.domain.examWeight}%` : ''}
-              </span>
-              <span className="meter-row__value">
-                {entry.completed}/{entry.total}
-              </span>
-            </div>
-            <ProgressBar
-              value={entry.percent}
-              tone={entry.percent === 100 ? 'success' : 'primary'}
-            />
+        {perCourse.map((item) => (
+          <div className="stack-sm" key={item.course.id}>
+            <h3 className="subhead">
+              {item.course.icon} {item.course.examCode}
+            </h3>
+            {item.domains.map((entry) => (
+              <div className="stack-sm" key={entry.domain.id}>
+                <div className="meter-row">
+                  <span>
+                    {entry.domain.shortTitle}
+                    {` · ${weightBadge(entry.domain)}`}
+                  </span>
+                  <span className="meter-row__value">
+                    {entry.completed}/{entry.total}
+                  </span>
+                </div>
+                <ProgressBar
+                  value={entry.percent}
+                  tone={entry.percent === 100 ? 'success' : 'primary'}
+                />
+              </div>
+            ))}
           </div>
         ))}
       </section>

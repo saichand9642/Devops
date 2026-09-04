@@ -31,6 +31,43 @@ export const efficientKubectl: Topic = {
     '`kubectl explain <kind>.<path> --recursive` is faster than the documentation for a field name or nesting question, and it is always correct for the running version.',
     'Output shaping matters for verification: `-o jsonpath` for one value, `-o custom-columns` for a table, `--sort-by` for ordering, `-l` for a subset. A task that asks you to write something into a file is usually one of these plus a redirect.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Set up your shell before question one',
+      caption:
+        'Sixty seconds spent here buys back several minutes across the exam, and removes a whole class of typing mistakes.',
+      nodes: [
+        {
+          label: 'alias k=kubectl',
+          detail: 'Every command becomes six characters shorter',
+          tone: 'accent',
+        },
+        {
+          label: 'export do="--dry-run=client -o yaml"',
+          detail: 'Then: k create deploy web --image=nginx $do > web.yaml',
+        },
+        {
+          label: 'export now="--force --grace-period=0"',
+          detail: 'Deletes a Pod immediately instead of waiting 30 seconds',
+        },
+        {
+          label: 'complete -F __start_kubectl k',
+          detail: 'Restores tab completion for the alias',
+          arrowLabel: 'keeps completion working',
+        },
+        {
+          label: 'Set the namespace once per question',
+          detail: 'k config set-context --current --namespace=<ns>',
+          tone: 'success',
+          branch: {
+            label: 'Forgot this',
+            detail: 'Every later command silently targets the wrong namespace',
+          },
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Shell environment (not a Kubernetes object)',

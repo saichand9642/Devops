@@ -31,6 +31,79 @@ export const examTrapsAndChecklist: Topic = {
     'Several are about scope: nodes, PersistentVolumes, StorageClasses, ClusterRoles and IngressClasses are cluster-scoped, so `-n` is ignored and a Role can never grant access to them.',
     'And several are about where errors appear: a quota rejection for a Deployment shows up as a `FailedCreate` event on the ReplicaSet, not on the Deployment and not as a Pending Pod.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'The routine to run on every single question',
+      caption:
+        'Two habits win the most marks: set the context first, and verify before moving on. Both are cheap and both are forgotten under time pressure.',
+      nodes: [
+        {
+          label: 'Read the whole question twice',
+          detail: 'Note the namespace and every exact name given',
+          tone: 'accent',
+        },
+        {
+          label: 'Set the context and namespace',
+          detail: 'kubectl config use-context ...; then -n or set the default',
+          arrowLabel: 'before typing anything else',
+          branch: {
+            label: 'Skipped this',
+            detail: 'Perfect work in the wrong namespace scores zero',
+          },
+        },
+        {
+          label: 'Generate rather than type',
+          detail: '--dry-run=client -o yaml > q7.yaml, then edit',
+        },
+        {
+          label: 'Apply it',
+          detail: 'kubectl apply -f q7.yaml',
+        },
+        {
+          label: 'Verify against the wording',
+          detail: 'get, describe, and re-read the question one final time',
+          arrowLabel: 'do not skip',
+          tone: 'success',
+          branch: {
+            label: 'Cannot finish it',
+            detail: 'Flag it and move on. Never spend 20 minutes on one task.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Time triage during the exam',
+      caption:
+        'Two hours, roughly 15 to 20 tasks. Partial credit is real, so a half-finished task beats an untouched one.',
+      question: 'How is this task going?',
+      branches: [
+        {
+          condition: 'you know it cold',
+          result: 'Do it now, fast',
+          detail: 'Bank the easy marks in the first pass',
+          tone: 'accent',
+        },
+        {
+          condition: 'you know it but it is long',
+          result: 'Flag it, come back',
+          detail: 'Clear the quick ones first, then return',
+        },
+        {
+          condition: 'you are stuck past about five minutes',
+          result: 'Save what works and move on',
+          detail: 'Leave the partial object - it may still score',
+        },
+        {
+          condition: 'time is nearly up',
+          result: 'Verify, do not start anything new',
+          detail: 'Re-check namespaces and names on what you already did',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Verification commands (not a Kubernetes object)',

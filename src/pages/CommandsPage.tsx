@@ -1,6 +1,8 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import type { CommandRefEntry } from '../content/types'
 import { CopyButton } from '../components/ui/CopyButton'
 import { CodeBlock } from '../components/ui/CodeBlock'
@@ -82,6 +84,13 @@ function CommandEntry({ entry }: { entry: CommandRefEntry }) {
 }
 
 export function CommandsPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <Commands catalog={catalog} />
+}
+
+function Commands({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState<string>('all')
   const deferred = useDeferredValue(query)
@@ -98,18 +107,18 @@ export function CommandsPage() {
 
   const groups = useMemo(
     () =>
-      ckadCourse.commandGroups
+      course.commandGroups
         .filter((candidate) => group === 'all' || candidate.id === group)
         .map((candidate) => ({
           ...candidate,
           entries: candidate.entries.filter((entry) => matches(entry, tokens)),
         }))
         .filter((candidate) => candidate.entries.length > 0),
-    [group, tokens],
+    [course.commandGroups, group, tokens],
   )
 
   const totalShown = groups.reduce((sum, candidate) => sum + candidate.entries.length, 0)
-  const totalAll = ckadCourse.commandGroups.reduce(
+  const totalAll = course.commandGroups.reduce(
     (sum, candidate) => sum + candidate.entries.length,
     0,
   )
@@ -120,7 +129,7 @@ export function CommandsPage() {
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span aria-hidden="true">/</span>
-          <Link to={ckadCourse.route}>CKAD</Link>
+          <Link to={course.route}>{course.examCode}</Link>
           <span aria-hidden="true">/</span>
           <span>Command reference</span>
         </nav>
@@ -161,7 +170,7 @@ export function CommandsPage() {
             >
               All
             </button>
-            {ckadCourse.commandGroups.map((candidate) => (
+            {course.commandGroups.map((candidate) => (
               <button
                 key={candidate.id}
                 type="button"
@@ -241,7 +250,7 @@ export function CommandsPage() {
           </li>
         </ul>
         <div className="row">
-          {ckadCourse.sources.map((source) => (
+          {course.sources.map((source) => (
             <a
               key={source.url}
               className="btn btn--secondary btn--sm"

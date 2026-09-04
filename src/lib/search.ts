@@ -81,15 +81,15 @@ export function buildSearchIndex(course: Course): SearchDocument[] {
       documents.push({
         id: `concept:${topic.id}:${object.kind}`,
         kind: 'concept',
-        title: `${object.kind} (${object.apiVersion})`,
+        title: object.apiVersion ? `${object.kind} (${object.apiVersion})` : object.kind,
         snippet: object.purpose,
         route: `${course.route}/topics/${topic.id}#key-objects`,
         domainId: topic.domainId,
         difficulty: topic.difficulty,
-        keywords: [object.kind, object.apiVersion],
+        keywords: [object.kind, object.apiVersion ?? ''].filter(Boolean),
         haystack: flatten([
           object.kind,
-          object.apiVersion,
+          object.apiVersion ?? '',
           object.purpose,
           object.fields.map((field) => `${field.path} ${field.meaning}`).join(' '),
           topic.title,

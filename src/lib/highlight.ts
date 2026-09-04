@@ -3,17 +3,20 @@ import bash from 'highlight.js/lib/languages/bash'
 import dockerfile from 'highlight.js/lib/languages/dockerfile'
 import json from 'highlight.js/lib/languages/json'
 import yaml from 'highlight.js/lib/languages/yaml'
+import { hcl } from './hcl-language'
 import type { CodeLanguage } from '../content/types'
 
 /**
- * Only the four languages the content actually uses are registered, which
- * keeps highlight.js at a fraction of its full bundle size and keeps the app
- * fully self-contained for offline use.
+ * Only the languages the content actually uses are registered, which keeps
+ * highlight.js at a fraction of its full bundle size and keeps the app fully
+ * self-contained for offline use. HCL is a local definition because
+ * highlight.js does not ship one.
  */
 hljs.registerLanguage('yaml', yaml)
 hljs.registerLanguage('bash', bash)
 hljs.registerLanguage('json', json)
 hljs.registerLanguage('dockerfile', dockerfile)
+hljs.registerLanguage('hcl', hcl)
 
 const escapeHtml = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')

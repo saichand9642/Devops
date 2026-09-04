@@ -40,6 +40,77 @@ export const volumesAndEphemeralStorage: Topic = {
     '`readOnly: true` on a `volumeMount` makes that mount read-only for that container regardless of the volume type.',
     'Ephemeral storage is a schedulable resource: `resources.requests["ephemeral-storage"]` and the matching limit control how much local disk a container may use, including its writable layer and its `emptyDir`s.',
   ],
+  diagrams: [
+    {
+      kind: 'nested',
+      title: 'A volume is declared once and mounted many times',
+      caption:
+        'spec.volumes says what storage exists. volumeMounts says where each container sees it. Two containers can mount the same volume at different paths.',
+      root: {
+        label: 'Pod spec',
+        children: [
+          {
+            label: 'volumes:',
+            detail: 'Declared once, at Pod level',
+            tone: 'accent',
+            children: [
+              { label: '- name: cache  emptyDir: {}', detail: 'Deleted with the Pod' },
+              {
+                label: '- name: conf  configMap: {name: app}',
+                detail: 'Read-only projection of keys as files',
+              },
+            ],
+          },
+          {
+            label: 'containers[0]: app',
+            children: [
+              { label: 'volumeMounts: cache at /data', tone: 'success' },
+              { label: 'volumeMounts: conf at /etc/app', tone: 'success' },
+            ],
+          },
+          {
+            label: 'containers[1]: sidecar',
+            children: [
+              {
+                label: 'volumeMounts: cache at /shared',
+                detail: 'Same volume, different path',
+                tone: 'success',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      kind: 'decision',
+      title: 'Which volume type?',
+      caption: 'Ask how long the data must live: this request, this Pod, or longer than the Pod.',
+      question: 'How long must the data survive?',
+      branches: [
+        {
+          condition: 'only while this Pod exists',
+          result: 'emptyDir',
+          detail: 'Scratch space and sharing between containers',
+        },
+        {
+          condition: 'longer than the Pod',
+          result: 'persistentVolumeClaim',
+          detail: 'Survives Pod deletion and rescheduling',
+          tone: 'accent',
+        },
+        {
+          condition: 'it is configuration, not data',
+          result: 'configMap or secret',
+          detail: 'Mounted read-only; updates propagate to the files',
+        },
+        {
+          condition: 'the Pod needs facts about itself',
+          result: 'downwardAPI',
+          detail: 'Exposes labels, annotations, limits as files',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

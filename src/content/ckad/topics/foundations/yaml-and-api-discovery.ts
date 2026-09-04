@@ -28,6 +28,44 @@ export const yamlAndApiDiscovery: Topic = {
     'Multi-document files separate objects with a line containing only `---`. Objects are applied in file order, which is how you put a Namespace before the things inside it.',
     'YAML quoting matters in two places: a value that looks like a number or boolean but must be a string (`"1.27"`, `"true"`, `"on"`), and multi-line strings. Use `|` to keep newlines and `>` to fold them into spaces.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Finding a field you cannot remember',
+      caption:
+        'You do not need to memorise the API. You need to be fast at this loop - it works offline and is always current for your cluster.',
+      nodes: [
+        {
+          label: 'Which kind holds the field?',
+          detail: 'kubectl api-resources | grep -i <word>',
+        },
+        {
+          label: 'Confirm the apiVersion',
+          detail: 'The APIVERSION column, e.g. apps/v1',
+          arrowLabel: 'note the group',
+        },
+        {
+          label: 'Walk the field tree',
+          detail: 'kubectl explain deployment.spec.template.spec',
+          tone: 'accent',
+          arrowLabel: 'one level at a time',
+        },
+        {
+          label: 'Read the whole subtree at once',
+          detail: 'kubectl explain pod.spec --recursive | grep -i probe',
+        },
+        {
+          label: 'Write the field, then validate',
+          detail: 'kubectl apply --dry-run=server -f file.yaml',
+          tone: 'success',
+          branch: {
+            label: 'Unknown field error',
+            detail: 'You are on the wrong apiVersion or misspelled the path',
+          },
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Every object',

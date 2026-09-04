@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
 import { buildExam } from '../lib/exam-builder'
 import { scoreExam } from '../lib/scoring'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { useProgress } from '../lib/use-progress'
 import type { ExamAttempt } from '../lib/storage'
 import { QuestionView } from '../components/QuestionView'
@@ -18,18 +20,22 @@ import { EmptyState } from '../components/ui/StateBlock'
  * silently produce a different exam.
  */
 export function ExamRunnerPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <ExamRunnerView catalog={catalog} />
+}
+
+function ExamRunnerView({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { saveExamAttempt } = useProgress()
 
-  const minutes = Math.max(
-    1,
-    Number(params.get('minutes')) || ckadCourse.examBlueprint.defaultMinutes,
-  )
-  const count = Math.max(1, Number(params.get('count')) || ckadCourse.examBlueprint.questionCount)
+  const minutes = Math.max(1, Number(params.get('minutes')) || course.examBlueprint.defaultMinutes)
+  const count = Math.max(1, Number(params.get('count')) || course.examBlueprint.questionCount)
   const seed = Number(params.get('seed')) || 1
 
-  const paper = useMemo(() => buildExam(ckadCourse, count, seed), [count, seed])
+  const paper = useMemo(() => buildExam(course, count, seed), [course, count, seed])
   // Wall-clock start, fixed for the life of this component instance.
   const startedAt = useRef(Date.now()).current
 
@@ -41,10 +47,10 @@ export function ExamRunnerPage() {
     (reason: 'manual' | 'expired') => {
       if (submitting) return
       setSubmitting(true)
-      const summary = scoreExam(paper.questions, responses, ckadCourse.examBlueprint.passingScore)
+      const summary = scoreExam(paper.questions, responses, course.examBlueprint.passingScore)
       const attempt: ExamAttempt = {
         id: `attempt-${startedAt}-${seed}`,
-        courseId: ckadCourse.id,
+        courseId: course.id,
         label: `${paper.questions.length}-question paper · ${minutes} min${reason === 'expired' ? ' · time expired' : ''}`,
         startedAt,
         submittedAt: Date.now(),
@@ -53,15 +59,25 @@ export function ExamRunnerPage() {
         earnedPoints: summary.earnedPoints,
         totalPoints: summary.totalPoints,
         scorePercent: summary.scorePercent,
-        passingScore: ckadCourse.examBlueprint.passingScore,
+        passingScore: course.examBlueprint.passingScore,
         passed: summary.passed,
         byDomain: summary.byDomain,
         answers: summary.answers,
       }
       saveExamAttempt(attempt)
-      navigate(`${ckadCourse.route}/exams/attempts/${attempt.id}`, { replace: true })
+      navigate(`${course.route}/exams/attempts/${attempt.id}`, { replace: true })
     },
-    [minutes, navigate, paper.questions, responses, saveExamAttempt, seed, startedAt, submitting],
+    [
+      course,
+      minutes,
+      navigate,
+      paper.questions,
+      responses,
+      saveExamAttempt,
+      seed,
+      startedAt,
+      submitting,
+    ],
   )
 
   const onExpire = useCallback(() => submit('expired'), [submit])
@@ -77,7 +93,7 @@ export function ExamRunnerPage() {
           title="Could not build a paper"
           description="No questions were available for the weighted domains."
           action={
-            <Link className="btn" to={`${ckadCourse.route}/exams`}>
+            <Link className="btn" to={`${course.route}/exams`}>
               Back to mock exams
             </Link>
           }
@@ -182,7 +198,7 @@ export function ExamRunnerPage() {
       </div>
 
       <p className="disclaimer">
-        Original practice questions written for this app. Not actual CKAD exam content.
+        Original practice questions written for this app. Not actual {course.examCode} exam content.
       </p>
     </div>
   )

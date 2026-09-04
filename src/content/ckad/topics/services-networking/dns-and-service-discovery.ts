@@ -31,6 +31,58 @@ export const dnsAndServiceDiscovery: Topic = {
     '`spec.dnsConfig` adds nameservers, search domains and options - including lowering `ndots` for a Pod that mostly resolves external names.',
     'If CoreDNS is down or has no endpoints, *every* name fails including cluster ones. `kubectl get svc,endpoints -n kube-system kube-dns` is the check.',
   ],
+  diagrams: [
+    {
+      kind: 'sequence',
+      title: 'Resolving a Service name from inside a Pod',
+      caption:
+        'The search list in /etc/resolv.conf is why a bare Service name works in the same namespace but not across namespaces.',
+      participants: [
+        { id: 'app', label: 'Your Pod' },
+        { id: 'dns', label: 'CoreDNS' },
+        { id: 'kp', label: 'kube-proxy' },
+        { id: 'pod', label: 'Backend Pod' },
+      ],
+      messages: [
+        { from: 'app', to: 'dns', label: 'A record for "api"' },
+        { from: 'dns', to: 'dns', label: 'try the search suffixes in order' },
+        { from: 'dns', to: 'app', label: 'ClusterIP 10.96.4.7', kind: 'return' },
+        { from: 'app', to: 'kp', label: 'connect to 10.96.4.7:80' },
+        { from: 'kp', to: 'pod', label: 'DNAT to a Ready Pod IP:8080' },
+        { from: 'pod', to: 'app', label: 'HTTP response', kind: 'return' },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Which name do I use?',
+      caption:
+        'The full form always works. Learn service.namespace.svc.cluster.local and shorten only when you are sure.',
+      question: 'Where is the thing you are calling?',
+      branches: [
+        {
+          condition: 'the same namespace',
+          result: 'api',
+          detail: 'The search list completes it for you',
+          tone: 'accent',
+        },
+        {
+          condition: 'a different namespace',
+          result: 'api.prod',
+          detail: 'A bare name will NOT reach another namespace',
+        },
+        {
+          condition: 'you want no ambiguity at all',
+          result: 'api.prod.svc.cluster.local',
+          detail: 'The fully qualified name. Always correct.',
+        },
+        {
+          condition: 'an individual Pod behind a headless Service',
+          result: 'pod-0.api.prod.svc.cluster.local',
+          detail: 'Requires clusterIP: None on the Service',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

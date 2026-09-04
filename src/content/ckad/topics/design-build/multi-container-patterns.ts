@@ -30,6 +30,64 @@ export const multiContainerPatterns: Topic = {
     "Shared state options: an `emptyDir` volume mounted into both containers (most common), the shared network namespace (`localhost`), and shared process namespace (`spec.shareProcessNamespace: true`) if one container must see the other's processes.",
     '`kubectl logs`, `kubectl exec` and `kubectl describe` all need `-c <container>` in a multi-container Pod. Without it, `logs` errors and lists the choices.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Which multi-container pattern?',
+      caption: 'Name the direction the data flows and the pattern names itself.',
+      question: 'What is the extra container there to do?',
+      branches: [
+        {
+          condition: 'add a capability alongside the app',
+          result: 'Sidecar',
+          detail: 'Log shipper, config reloader, cache warmer',
+          tone: 'accent',
+        },
+        {
+          condition: 'reshape output the app already produces',
+          result: 'Adapter',
+          detail: 'Rewrites logs or metrics into the format a tool expects',
+        },
+        {
+          condition: 'simplify how the app reaches the outside',
+          result: 'Ambassador',
+          detail: 'App talks to localhost; the proxy handles the real endpoint',
+        },
+        {
+          condition: 'prepare something before the app starts',
+          result: 'Init container, not a sidecar',
+          detail: 'It must finish; a sidecar must not',
+          tone: 'warning',
+        },
+      ],
+    },
+    {
+      kind: 'nested',
+      title: 'How a sidecar and the app meet',
+      caption:
+        'Two containers, two images, one emptyDir and one localhost. Those two shared things are the entire pattern.',
+      root: {
+        label: 'Pod',
+        children: [
+          {
+            label: 'volumes: - name: shared  emptyDir: {}',
+            detail: 'Lives and dies with the Pod',
+            tone: 'accent',
+          },
+          {
+            label: 'Container: app',
+            detail: 'Writes /var/log/app.log, listens on localhost:8080',
+            children: [{ label: 'volumeMounts: shared at /var/log', tone: 'success' }],
+          },
+          {
+            label: 'Container: sidecar',
+            detail: 'Tails the same file, scrapes localhost:8080',
+            children: [{ label: 'volumeMounts: shared at /var/log', tone: 'success' }],
+          },
+        ],
+      },
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

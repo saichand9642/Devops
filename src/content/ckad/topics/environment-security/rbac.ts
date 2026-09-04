@@ -40,6 +40,77 @@ export const rbac: Topic = {
     'Built-in ClusterRoles worth knowing: `view` (read-only, excludes Secrets), `edit` (read/write, excludes RBAC), `admin` (edit plus RBAC within a namespace), `cluster-admin` (everything). Binding `cluster-admin` is the answer to almost nothing.',
     "`kubectl auth can-i <verb> <resource>` tests your own permissions; adding `--as=<user>` or `--as=system:serviceaccount:<ns>:<sa>` tests someone else's (impersonation, which itself requires permission).",
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'RBAC is one chain of four links',
+      caption:
+        'A Role grants nothing on its own. The binding is what connects permissions to an identity, and it is the link people forget.',
+      nodes: [
+        {
+          label: 'Identity',
+          detail: 'A ServiceAccount, user, or group',
+          tone: 'accent',
+        },
+        {
+          label: 'RoleBinding',
+          detail: 'subjects: this identity. roleRef: that Role.',
+          arrowLabel: 'bound by',
+          branch: {
+            label: 'No binding',
+            detail: 'The Role exists and does nothing at all',
+          },
+        },
+        {
+          label: 'Role',
+          detail: 'rules: apiGroups, resources, verbs',
+          arrowLabel: 'refers to',
+        },
+        {
+          label: 'Allowed verbs on named resources',
+          detail: 'get, list, watch, create, update, patch, delete',
+          tone: 'success',
+        },
+        {
+          label: 'Verify before you move on',
+          detail: 'kubectl auth can-i list pods --as=system:serviceaccount:ns:sa',
+          arrowLabel: 'always check',
+          tone: 'accent',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Role or ClusterRole? RoleBinding or ClusterRoleBinding?',
+      caption:
+        'The pairing you will need most often on the exam is a ClusterRole bound by a RoleBinding - reuse one definition, scope it per namespace.',
+      question: 'What scope does the permission need?',
+      branches: [
+        {
+          condition: 'namespaced resources in ONE namespace',
+          result: 'Role + RoleBinding',
+          detail: 'Both live in that namespace',
+          tone: 'accent',
+        },
+        {
+          condition: 'the same rules in several namespaces',
+          result: 'ClusterRole + RoleBinding',
+          detail: 'Defined once, granted per namespace',
+        },
+        {
+          condition: 'cluster-scoped resources such as nodes or PVs',
+          result: 'ClusterRole + ClusterRoleBinding',
+          detail: 'The only combination that reaches them',
+        },
+        {
+          condition: 'you used a Role for nodes',
+          result: 'It will never work',
+          detail: 'Cluster-scoped resources cannot be granted by a Role',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Role',

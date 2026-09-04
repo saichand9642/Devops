@@ -30,6 +30,45 @@ export const cronjobs: Topic = {
     "`kubectl create job <name> --from=cronjob/<cronjob>` copies the CronJob's `jobTemplate` into a standalone Job so you can run it on demand without waiting for the schedule.",
     "A CronJob's `jobTemplate.spec` accepts every Job field, so `backoffLimit`, `activeDeadlineSeconds` and `ttlSecondsAfterFinished` all apply to each scheduled run.",
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'CronJob creates a Job, which creates a Pod',
+      caption:
+        'Three objects, not one. When a scheduled run misbehaves, check all three: kubectl get cronjob,job,pod.',
+      nodes: [
+        {
+          label: 'CronJob',
+          detail: 'schedule: "*/5 * * * *" in the cluster timezone',
+          tone: 'accent',
+        },
+        {
+          label: 'Schedule fires',
+          detail: 'Controller checks roughly every 10 seconds',
+          arrowLabel: 'time matches',
+          branch: {
+            label: 'Missed by over 100s',
+            detail: 'startingDeadlineSeconds may skip the run entirely',
+          },
+        },
+        {
+          label: 'A new Job is created',
+          detail: 'Named cronjob-name-<timestamp>',
+          branch: {
+            label: 'concurrencyPolicy: Forbid',
+            detail: 'Skipped because the previous Job is still running',
+          },
+        },
+        { label: 'The Job creates a Pod', detail: 'Normal Job semantics apply' },
+        {
+          label: 'History is trimmed',
+          detail: 'successfulJobsHistoryLimit: 3, failedJobsHistoryLimit: 1',
+          arrowLabel: 'after completion',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'CronJob',

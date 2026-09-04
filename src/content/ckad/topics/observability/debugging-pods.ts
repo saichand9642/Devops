@@ -31,6 +31,75 @@ export const debuggingPods: Topic = {
     '`kubectl port-forward pod/<pod> 8080:80` maps local 8080 to container port 80. It works even when the Pod is not Ready and has no Service, because it goes through the API server rather than the data path.',
     '`kubectl cp <pod>:/path/in/container ./local` requires `tar` in the container. For images without it, an ephemeral container that mounts the same volumes is the alternative.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'The four-command debugging routine',
+      caption:
+        'Always in this order. Each command answers a different question, and describe answers most of them.',
+      nodes: [
+        {
+          label: 'kubectl get pod -o wide',
+          detail: 'Phase, READY count, RESTARTS, node, IP',
+          tone: 'accent',
+        },
+        {
+          label: 'kubectl describe pod',
+          detail: 'Read Events at the bottom first, then container State',
+          arrowLabel: 'why is it in that state?',
+        },
+        {
+          label: 'kubectl logs, then logs --previous',
+          detail: '--previous is the only way to see a crashed container',
+          arrowLabel: 'what did the app say?',
+        },
+        {
+          label: 'kubectl exec -it -- sh',
+          detail: 'Only useful if the container is actually running',
+          arrowLabel: 'look from inside',
+          branch: {
+            label: 'No shell in the image',
+            detail: 'Use kubectl debug to attach an ephemeral container',
+          },
+        },
+        {
+          label: 'You know the cause',
+          detail: 'Fix the manifest, not the live Pod',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Where the answer lives, by symptom',
+      caption:
+        'Pending and image problems are cluster-side, so describe has the answer. Crashes are app-side, so logs do.',
+      question: 'What does kubectl get pod show?',
+      branches: [
+        {
+          condition: 'Pending',
+          result: 'describe pod, Events',
+          detail: 'Unschedulable, insufficient CPU, unbound PVC',
+          tone: 'accent',
+        },
+        {
+          condition: 'ImagePullBackOff or ErrImagePull',
+          result: 'describe pod, Events',
+          detail: 'The exact registry error is quoted there',
+        },
+        {
+          condition: 'CrashLoopBackOff',
+          result: 'logs --previous',
+          detail: 'The container is already gone; only the previous log remains',
+        },
+        {
+          condition: 'Running but READY 0/1',
+          result: 'describe pod, readiness probe',
+          detail: 'The probe failure message names the path and port',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

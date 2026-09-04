@@ -31,6 +31,41 @@ export const apiDeprecations: Topic = {
     'For CustomResourceDefinitions, multiple versions can be served simultaneously with one marked `storage: true`, and a conversion webhook can translate between them. That is the CRD-specific version of the same idea.',
     '`kubectl explain <kind> --api-version=<group/version>` shows the field set for a specific version, which is how you find out what changed between two versions.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Fixing a manifest on a removed API version',
+      caption:
+        'The error message names the group and version it wanted. kubectl explain and api-resources give you the replacement.',
+      nodes: [
+        {
+          label: 'apply fails: no matches for kind',
+          detail: 'The apiVersion in the file no longer exists',
+          tone: 'warning',
+        },
+        {
+          label: 'Ask the cluster what it serves',
+          detail: 'kubectl api-resources | grep -i <kind>',
+          arrowLabel: 'authoritative, and offline',
+          tone: 'accent',
+        },
+        {
+          label: 'Read the current APIVERSION',
+          detail: 'e.g. Deployment is apps/v1, CronJob is batch/v1',
+        },
+        {
+          label: 'Update apiVersion, then check the fields',
+          detail: 'Some renames moved fields too, not just the group',
+          arrowLabel: 'a version bump is rarely enough',
+        },
+        {
+          label: 'Validate against the real API',
+          detail: 'kubectl apply --dry-run=server -f file.yaml',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'CustomResourceDefinition',

@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { useProgress } from '../lib/use-progress'
 import {
   courseCompletion,
@@ -33,10 +35,10 @@ function formatMinutes(minutes: number): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
 }
 
-function TopicRow({ topic, status }: { topic: Topic; status: TopicStatus }) {
+function TopicRow({ topic, status, route }: { topic: Topic; status: TopicStatus; route: string }) {
   return (
     <li>
-      <Link className="topic-row" to={`${ckadCourse.route}/topics/${topic.id}`}>
+      <Link className="topic-row" to={`${route}/topics/${topic.id}`}>
         <span className="topic-row__status" aria-hidden="true">
           {statusIcon[status]}
         </span>
@@ -55,7 +57,7 @@ function TopicRow({ topic, status }: { topic: Topic; status: TopicStatus }) {
   )
 }
 
-function DomainCard({ entry }: { entry: DomainStats }) {
+function DomainCard({ entry, route }: { entry: DomainStats; route: string }) {
   const { state } = useProgress()
   const { domain } = entry
   return (
@@ -70,7 +72,7 @@ function DomainCard({ entry }: { entry: DomainStats }) {
           {domain.title}
         </h3>
         {domain.examWeight === null ? (
-          <Badge>Support</Badge>
+          <Badge>{domain.weightLabel ?? 'Support'}</Badge>
         ) : (
           <Badge tone="info" className="badge--weight">
             {domain.examWeight}% of exam
@@ -114,15 +116,17 @@ function DomainCard({ entry }: { entry: DomainStats }) {
 
       <ul className="topic-list">
         {entry.topics.map((topic) => (
-          <TopicRow key={topic.id} topic={topic} status={topicStatus(state, topic.id)} />
+          <TopicRow
+            key={topic.id}
+            route={route}
+            topic={topic}
+            status={topicStatus(state, topic.id)}
+          />
         ))}
       </ul>
 
       <div className="row">
-        <Link
-          className="btn btn--secondary btn--sm"
-          to={`${ckadCourse.route}/practice/${domain.id}`}
-        >
+        <Link className="btn btn--secondary btn--sm" to={`${route}/practice/${domain.id}`}>
           Practise this domain
         </Link>
       </div>
@@ -131,13 +135,21 @@ function DomainCard({ entry }: { entry: DomainStats }) {
 }
 
 export function CourseDashboardPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <Dashboard catalog={catalog} />
+}
+
+function Dashboard({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const { state } = useProgress()
-  const domains = domainStats(ckadCourse, state)
-  const completion = courseCompletion(ckadCourse, state)
-  const readiness = readinessFor(ckadCourse, state)
+  const domains = domainStats(course, state)
+  const completion = courseCompletion(course, state)
+  const readiness = readinessFor(course, state)
 
   const weighted = domains.filter((entry) => entry.domain.examWeight !== null)
   const totalWeight = weighted.reduce((sum, entry) => sum + (entry.domain.examWeight ?? 0), 0)
+  const supportCount = domains.length - weighted.length
   const totalMinutes = domains.reduce((sum, entry) => sum + entry.estimatedMinutes, 0)
 
   // The learning path walks the domains in curriculum order, which is
@@ -155,15 +167,18 @@ export function CourseDashboardPage() {
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span aria-hidden="true">/</span>
-          <span>CKAD</span>
+          <span>{course.examCode}</span>
         </nav>
-        <h1>{ckadCourse.title}</h1>
-        <p className="muted">{ckadCourse.subtitle}</p>
+        <h1>{course.title}</h1>
+        <p className="muted">{course.subtitle}</p>
         <div className="page-header__meta">
-          <Badge tone="info">{ckadCourse.targetVersion}</Badge>
-          <Badge>{ckadCourse.examBlueprint.defaultMinutes} minutes</Badge>
-          <Badge>{ckadCourse.examBlueprint.passingScore}% to pass</Badge>
-          <Badge>{ckadCourse.topics.length} lessons</Badge>
+          <Badge tone="info">{course.targetVersion}</Badge>
+          <Badge>{course.examBlueprint.defaultMinutes} minutes</Badge>
+          <Badge>
+            {course.examBlueprint.passingScore}%{' '}
+            {course.examBlueprint.officialWeights ? 'to pass' : 'target (app)'}
+          </Badge>
+          <Badge>{course.topics.length} lessons</Badge>
           <Badge>{formatMinutes(totalMinutes)} of material</Badge>
         </div>
       </header>
@@ -203,61 +218,63 @@ export function CourseDashboardPage() {
                   {step.topics} lessons · {formatMinutes(step.minutes)}
                   {step.domain.examWeight !== null
                     ? ` · ${step.domain.examWeight}% of the exam`
-                    : ' · no exam weight, but assumed knowledge'}
+                    : step.domain.weightLabel
+                      ? ` · ${step.domain.weightLabel}, no published weighting`
+                      : ' · no exam weight, but assumed knowledge'}
                 </p>
                 <ProgressBar value={step.percent} />
               </div>
             </div>
           ))}
         </div>
-        <p className="subtle">
-          Work top to bottom the first time through. Foundations and Exam Technique carry no
-          official weight, but the five weighted domains assume the first and are much easier to
-          finish in time with the last.
-        </p>
+        <p className="subtle">{course.copy.studyPath}</p>
       </section>
 
       <section className="stack" aria-labelledby="domains">
         <h2 id="domains">
           Curriculum domains{' '}
-          <span className="subtle">({totalWeight}% weighted + 2 support sections)</span>
+          <span className="subtle">
+            {course.examBlueprint.officialWeights
+              ? `(${totalWeight}% weighted + ${supportCount} support ${
+                  supportCount === 1 ? 'section' : 'sections'
+                })`
+              : `(${course.domains.length} published objectives)`}
+          </span>
         </h2>
         {domains.map((entry) => (
-          <DomainCard key={entry.domain.id} entry={entry} />
+          <DomainCard key={entry.domain.id} entry={entry} route={course.route} />
         ))}
       </section>
 
       <section className="stack" aria-labelledby="next-steps">
         <h2 id="next-steps">Practise and verify</h2>
         <div className="card-grid card-grid--3">
-          <Link className="card card--interactive stack-sm" to={`${ckadCourse.route}/practice`}>
+          <Link className="card card--interactive stack-sm" to={`${course.route}/practice`}>
             <strong className="card__title">🎯 Practice questions</strong>
             <p className="subtle" style={{ margin: 0 }}>
-              {ckadCourse.questions.length} original questions by domain, with explanations and
-              retry of anything you got wrong.
+              {course.questions.length} original questions by domain, with explanations and retry of
+              anything you got wrong.
             </p>
           </Link>
-          <Link className="card card--interactive stack-sm" to={`${ckadCourse.route}/exams`}>
+          <Link className="card card--interactive stack-sm" to={`${course.route}/exams`}>
             <strong className="card__title">⏱️ Mock exams</strong>
             <p className="subtle" style={{ margin: 0 }}>
-              Timed papers weighted to the official domain percentages, scored per domain.
+              {course.copy.examWeighting}
             </p>
           </Link>
-          <Link className="card card--interactive stack-sm" to={`${ckadCourse.route}/commands`}>
+          <Link className="card card--interactive stack-sm" to={`${course.route}/commands`}>
             <strong className="card__title">⌨️ Command reference</strong>
             <p className="subtle" style={{ margin: 0 }}>
-              Searchable kubectl, Helm and Kustomize cheat sheet with copy buttons and YAML
-              templates.
+              {course.copy.commandReference}
             </p>
           </Link>
         </div>
       </section>
 
       <p className="disclaimer">
-        Domain names and weights are taken from the official CNCF/Linux Foundation CKAD curriculum
-        (verified 2026-09-03 against CKAD_Curriculum_v1.35, exam environment{' '}
-        {ckadCourse.targetVersion}). All questions and labs in this app are original material, not
-        exam content.
+        {course.copy.provenance} Exam environment: {course.targetVersion}.
+        {course.examBlueprint.note ? ` ${course.examBlueprint.note}` : ''} All questions and labs in
+        this app are original material, not exam content.
       </p>
     </div>
   )

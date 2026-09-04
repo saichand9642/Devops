@@ -31,6 +31,44 @@ export const helmFundamentals: Topic = {
     '`--atomic` rolls the release back automatically if the upgrade fails, and implies `--wait`. `--wait` blocks until Pods are Ready or the `--timeout` expires.',
     "`helm uninstall` removes the release's objects. It does *not* remove CRDs installed from the `crds/` directory, and by default it also removes the history unless you pass `--keep-history`.",
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'What helm install actually does',
+      caption:
+        'Helm renders templates into plain manifests and applies them. Nothing new runs in your cluster afterwards.',
+      nodes: [
+        {
+          label: 'Chart',
+          detail: 'Chart.yaml, templates/, values.yaml',
+          tone: 'accent',
+        },
+        {
+          label: 'Your value overrides',
+          detail: '-f my-values.yaml, --set image.tag=1.2.0',
+          arrowLabel: 'merged over the defaults',
+        },
+        {
+          label: 'Templates are rendered',
+          detail: 'See exactly what with helm template',
+          arrowLabel: 'Go templating',
+        },
+        {
+          label: 'Plain Kubernetes manifests',
+          detail: 'Ordinary Deployments, Services, ConfigMaps',
+        },
+        {
+          label: 'Applied to the cluster as a release',
+          detail: 'Release history is stored in Secrets in the namespace',
+          tone: 'success',
+          branch: {
+            label: 'Rendering error',
+            detail: 'Run helm template first - it fails locally, faster',
+          },
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Chart (files, not a Kubernetes object)',

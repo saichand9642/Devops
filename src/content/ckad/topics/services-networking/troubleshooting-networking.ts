@@ -31,6 +31,87 @@ export const troubleshootingNetworking: Topic = {
     'Layer 6 - external path. For Ingress: empty ADDRESS means no controller, 503 means no backend, 404 means no matching rule. For NodePort: check the port is in range and that you are using a node IP. For LoadBalancer: `<pending>` means no cloud provider.',
     'Response signatures worth memorising: **connection refused** - something is there but nothing is listening on that port; **timeout** - packets are being dropped (policy, wrong IP, no route); **no such host** - DNS; **503** - a proxy found no healthy backend; **404** - a proxy found no matching route.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Bisect the path, do not guess',
+      caption:
+        'Four checks, each ruling out one layer. Whichever one fails first is where the fault is.',
+      nodes: [
+        {
+          label: '1. Is the Pod itself serving?',
+          detail: 'kubectl exec <pod> -- wget -qO- localhost:8080',
+          tone: 'accent',
+          branch: {
+            label: 'Fails here',
+            detail: 'An application problem. The network is innocent.',
+          },
+        },
+        {
+          label: '2. Does the Service have endpoints?',
+          detail: 'kubectl get endpoints <svc>',
+          arrowLabel: 'app responds',
+          branch: {
+            label: '<none>',
+            detail: 'Selector mismatch, or the Pods are not Ready',
+          },
+        },
+        {
+          label: '3. Does the name resolve?',
+          detail: 'kubectl run t --rm -it --image=busybox -- nslookup <svc>',
+          arrowLabel: 'endpoints exist',
+          branch: {
+            label: 'NXDOMAIN',
+            detail: 'Wrong namespace in the name, or CoreDNS is unhealthy',
+          },
+        },
+        {
+          label: '4. Does a connection get through?',
+          detail: 'wget -qO- <svc>:80 from a Pod in the same namespace',
+          arrowLabel: 'DNS works',
+          branch: {
+            label: 'Times out rather than refusing',
+            detail: 'A timeout points at NetworkPolicy; refused points at the port',
+          },
+        },
+        {
+          label: 'Path proven end to end',
+          detail: 'If it still fails, it is Ingress or something outside the cluster',
+          tone: 'success',
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'What the failure mode tells you',
+      caption:
+        'Refused, timed out and NXDOMAIN are three different faults. Do not treat them as one.',
+      question: 'How exactly did the connection fail?',
+      branches: [
+        {
+          condition: 'Connection refused, immediately',
+          result: 'Something is listening, wrong port',
+          detail: 'targetPort, containerPort, or the app bound to 127.0.0.1',
+          tone: 'accent',
+        },
+        {
+          condition: 'Timed out, no response at all',
+          result: 'Packets are being dropped',
+          detail: 'Usually a NetworkPolicy denying that direction',
+        },
+        {
+          condition: 'NXDOMAIN or "bad address"',
+          result: 'A DNS problem',
+          detail: 'Wrong name, wrong namespace, or CoreDNS is down',
+        },
+        {
+          condition: 'Works from one Pod, not another',
+          result: 'Namespace-scoped rules',
+          detail: 'A namespaceSelector or a per-namespace policy is in play',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Service',

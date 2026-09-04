@@ -31,6 +31,27 @@ export const monitoringCliTools: Topic = {
     '`-o custom-columns=NAME:.path,OTHER:.path` builds a table from arbitrary fields; `-o jsonpath` extracts raw values for scripting. Both read the same object you would see with `-o yaml`.',
     "`kubectl api-resources` and `kubectl get --raw /metrics` exist too - the latter returns the API server's own Prometheus metrics, occasionally useful but not exam material.",
   ],
+  diagrams: [
+    {
+      kind: 'sequence',
+      title: 'Why kubectl top needs metrics-server',
+      caption:
+        'kubectl top is not built into the API. Without metrics-server it returns an error, not zeros.',
+      participants: [
+        { id: 'cli', label: 'kubectl top' },
+        { id: 'api', label: 'API server' },
+        { id: 'ms', label: 'metrics-server' },
+        { id: 'kl', label: 'kubelet' },
+      ],
+      messages: [
+        { from: 'cli', to: 'api', label: 'GET metrics.k8s.io' },
+        { from: 'api', to: 'ms', label: 'proxied to the API service' },
+        { from: 'ms', to: 'kl', label: 'scrape resource usage' },
+        { from: 'kl', to: 'ms', label: 'CPU and memory samples', kind: 'return' },
+        { from: 'ms', to: 'cli', label: 'usage per Pod and node', kind: 'return' },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'PodMetrics',

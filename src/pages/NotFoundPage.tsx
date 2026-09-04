@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
+import { courseIndexes } from '../content/registry'
 import { EmptyState } from '../components/ui/StateBlock'
 
 export function NotFoundPage() {
@@ -17,10 +17,10 @@ export function NotFoundPage() {
             <Link className="btn" to="/">
               Home
             </Link>
-            <Link className="btn btn--secondary" to={ckadCourse.route}>
+            <Link className="btn btn--secondary" to={courseIndexes[0].course.route}>
               CKAD dashboard
             </Link>
-            <Link className="btn btn--secondary" to={`${ckadCourse.route}/search`}>
+            <Link className="btn btn--secondary" to={`${courseIndexes[0].course.route}/search`}>
               Search
             </Link>
           </div>

@@ -30,6 +30,68 @@ export const containerImages: Topic = {
     'Multi-stage builds compile in one stage and copy only the artefact into a tiny final stage (`FROM scratch`, `alpine`, or a distroless base). This is how you get a 15 MB image from a 900 MB build environment.',
     'Private registries need a `kubernetes.io/dockerconfigjson` Secret referenced by `spec.imagePullSecrets`, otherwise the kubelet fails with ImagePullBackOff and an "unauthorized" message.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'From Dockerfile to a running container',
+      caption:
+        'Kubernetes only ever joins at step 4. If the image is not in a registry the cluster can read, no manifest can fix it.',
+      nodes: [
+        { label: 'Dockerfile', detail: 'FROM, COPY, RUN, ENTRYPOINT' },
+        {
+          label: 'Build an image',
+          detail: 'docker build -t reg/app:1.2.0 .',
+          arrowLabel: 'build',
+        },
+        {
+          label: 'Push to a registry',
+          detail: 'docker push reg/app:1.2.0',
+          arrowLabel: 'push',
+          tone: 'accent',
+        },
+        {
+          label: 'Pod spec names the image',
+          detail: 'image: reg/app:1.2.0',
+          arrowLabel: 'reference by tag or digest',
+        },
+        {
+          label: 'kubelet pulls it',
+          detail: 'Honours imagePullPolicy and imagePullSecrets',
+          branch: {
+            label: 'ErrImagePull',
+            detail: 'Typo, private registry with no secret, or tag does not exist',
+          },
+        },
+        { label: 'Container runs', tone: 'success' },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'When does the kubelet actually pull?',
+      caption:
+        'imagePullPolicy defaults are tag-dependent, which is why :latest behaves differently from a pinned tag.',
+      question: 'What does imagePullPolicy say?',
+      branches: [
+        {
+          condition: 'IfNotPresent',
+          result: 'Pull only when not cached',
+          detail: 'The default for any tag other than latest',
+          tone: 'accent',
+        },
+        {
+          condition: 'Always',
+          result: 'Pull on every container start',
+          detail: 'The default when the tag is latest or omitted',
+        },
+        {
+          condition: 'Never',
+          result: 'Use the local cache or fail',
+          detail: 'For images preloaded onto the node',
+          tone: 'warning',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

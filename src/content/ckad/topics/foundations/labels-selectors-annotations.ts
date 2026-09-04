@@ -29,6 +29,60 @@ export const labelsSelectorsAnnotations: Topic = {
     "A Deployment adds `pod-template-hash` to the labels of the Pods it creates, and includes it in its ReplicaSet selectors. That is how two ReplicaSets from the same Deployment do not fight over each other's Pods - so never set `pod-template-hash` yourself.",
     'Annotations have no size limit worth worrying about at CKAD level (the total object must stay under the etcd value limit), and are not indexed - you cannot query by them.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'How a selector finds Pods',
+      caption:
+        'Nothing is wired by name. If the labels do not match, the Service has no endpoints and the Deployment manages nothing.',
+      nodes: [
+        {
+          label: 'Pod template carries labels',
+          detail: 'spec.template.metadata.labels: app=web',
+          tone: 'accent',
+        },
+        {
+          label: 'Pods are created with those labels',
+          detail: 'Every replica gets the same set',
+          arrowLabel: 'controller copies them',
+        },
+        {
+          label: 'Service selector is evaluated',
+          detail: 'spec.selector: app=web',
+          arrowLabel: 'continuously, not once',
+        },
+        {
+          label: 'Matching Pod IPs become endpoints',
+          detail: 'Only Pods that are also Ready',
+          tone: 'success',
+          branch: {
+            label: 'Selector does not match',
+            detail: 'ENDPOINTS shows <none> and traffic fails',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'decision',
+      title: 'Label or annotation?',
+      caption:
+        'The rule is simple: if something needs to select on it, it is a label. Otherwise it is an annotation.',
+      question: 'Will anything select or group by this value?',
+      branches: [
+        {
+          condition: 'yes, a Service, Deployment or NetworkPolicy needs it',
+          result: 'Label',
+          detail: 'Short, validated, indexed, usable with -l',
+        },
+        {
+          condition: 'no, it is information for humans or tools',
+          result: 'Annotation',
+          detail: 'Free-form, can be long, never selectable',
+          tone: 'accent',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Service',

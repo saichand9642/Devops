@@ -31,6 +31,67 @@ export const podFailureModes: Topic = {
     'A Pod stuck `Terminating` is a different class of problem: usually a finalizer, a volume that will not detach, or a container ignoring SIGTERM until the grace period expires.',
     '`Completed` with `restartPolicy: Always` becomes CrashLoopBackOff even though exit code 0 means success - the restart policy, not the exit code, is the problem.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Symptom to root cause',
+      caption:
+        'Nine out of ten exam troubleshooting tasks are one of these. Learn the mapping and you save minutes per task.',
+      question: 'What is the STATUS column telling you?',
+      branches: [
+        {
+          condition: 'Pending with no node assigned',
+          result: 'Nothing can schedule it',
+          detail: 'Requests too large, taints, or a PVC that is not Bound',
+        },
+        {
+          condition: 'Init:0/1 or Init:Error',
+          result: 'An init container is blocking',
+          detail: 'logs <pod> -c <init-container> shows why',
+          tone: 'accent',
+        },
+        {
+          condition: 'CrashLoopBackOff with RESTARTS climbing',
+          result: 'The app exits immediately',
+          detail: 'Bad command, missing config, or a failing livenessProbe',
+        },
+        {
+          condition: 'OOMKilled in the container State',
+          result: 'It exceeded its memory limit',
+          detail: 'Raise limits.memory or reduce what the app allocates',
+          tone: 'warning',
+        },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'What a container exit code tells you',
+      caption:
+        'Read the exit code in describe before reading any logs. It often names the cause on its own.',
+      nodes: [
+        { label: 'Container terminated', detail: 'Check State: Terminated, Exit Code' },
+        {
+          label: 'Exit Code 0',
+          detail: 'It finished successfully. Wrong for a long-running app.',
+          tone: 'success',
+        },
+        {
+          label: 'Exit Code 1 or 2',
+          detail: 'The application itself errored. Read the logs.',
+          arrowLabel: 'app-level failure',
+        },
+        {
+          label: 'Exit Code 137',
+          detail: 'SIGKILL. With Reason OOMKilled it hit the memory limit.',
+          tone: 'warning',
+        },
+        {
+          label: 'Exit Code 143',
+          detail: 'SIGTERM. Something asked it to stop - usually normal.',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',

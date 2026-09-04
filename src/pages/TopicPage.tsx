@@ -1,22 +1,30 @@
 import { useEffect, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ckadCourse } from '../content/courses'
-import { topicById } from '../content/ckad/topics'
-import { domainById } from '../content/ckad/domains'
-import { questionsForTopic } from '../content/ckad/questions'
+import { useCourseIndex } from '../lib/use-course'
+import type { CourseIndex } from '../content/registry'
+import { UnknownCourse } from '../components/UnknownCourse'
 import { useProgress } from '../lib/use-progress'
 import { difficultyLabel, topicStatus } from '../lib/stats'
+import { weightBadge } from '../lib/domain-label'
 import { Collapsible, Reveal } from '../components/ui/Collapsible'
 import { CodeBlock } from '../components/ui/CodeBlock'
 import { CommandList } from '../components/ui/CommandList'
 import { Badge } from '../components/ui/Badge'
 import { EmptyState } from '../components/ui/StateBlock'
 import { RichBlock, RichList, RichParagraphs, RichText } from '../components/ui/RichText'
+import { DiagramList } from '../components/ui/Diagram'
 
 export function TopicPage() {
+  const catalog = useCourseIndex()
+  if (!catalog) return <UnknownCourse />
+  return <TopicView catalog={catalog} />
+}
+
+function TopicView({ catalog }: { catalog: CourseIndex }) {
+  const { course } = catalog
   const { topicId } = useParams<{ topicId: string }>()
   const { state, markTopicVisited, toggleTopicCompleted } = useProgress()
-  const topic = topicId ? topicById.get(topicId) : undefined
+  const topic = topicId ? catalog.topicById.get(topicId) : undefined
 
   // Record the visit once per topic so "Continue learning" and the in-progress
   // state work, and so the study streak counts today.
@@ -24,14 +32,18 @@ export function TopicPage() {
     if (topic) markTopicVisited(topic.id)
   }, [topic, markTopicVisited])
 
+  /*
+   * Curriculum order for the previous/next links. Depends only on static
+   * content, so it is recomputed only when the course itself changes.
+   */
   const ordered = useMemo(
     () =>
-      [...ckadCourse.topics].sort((a, b) => {
-        const domainA = domainById.get(a.domainId)?.order ?? 99
-        const domainB = domainById.get(b.domainId)?.order ?? 99
+      [...course.topics].sort((a, b) => {
+        const domainA = catalog.domainById.get(a.domainId)?.order ?? 99
+        const domainB = catalog.domainById.get(b.domainId)?.order ?? 99
         return domainA - domainB || a.order - b.order
       }),
-    [],
+    [catalog.domainById, course.topics],
   )
 
   if (!topic) {
@@ -45,7 +57,7 @@ export function TopicPage() {
           title="That lesson id does not exist"
           description="It may have been renamed. Use search or the CKAD dashboard to find it."
           action={
-            <Link className="btn" to={ckadCourse.route}>
+            <Link className="btn" to={course.route}>
               Back to the CKAD dashboard
             </Link>
           }
@@ -54,16 +66,16 @@ export function TopicPage() {
     )
   }
 
-  const domain = domainById.get(topic.domainId)
+  const domain = catalog.domainById.get(topic.domainId)
   const status = topicStatus(state, topic.id)
   const isComplete = status === 'completed'
   const index = ordered.findIndex((candidate) => candidate.id === topic.id)
   const previous = index > 0 ? ordered[index - 1] : undefined
   const next = index >= 0 && index < ordered.length - 1 ? ordered[index + 1] : undefined
   const related = (topic.relatedTopicIds ?? [])
-    .map((id) => topicById.get(id))
+    .map((id) => catalog.topicById.get(id))
     .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate))
-  const quizQuestions = questionsForTopic(topic.id)
+  const quizQuestions = catalog.questionsForTopic(topic.id)
 
   return (
     <div className="page stack-lg">
@@ -71,9 +83,9 @@ export function TopicPage() {
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span aria-hidden="true">/</span>
-          <Link to={ckadCourse.route}>CKAD</Link>
+          <Link to={course.route}>{course.examCode}</Link>
           <span aria-hidden="true">/</span>
-          <a href={`${ckadCourse.route}#domain-${topic.domainId}`}>
+          <a href={`${course.route}#domain-${topic.domainId}`}>
             {domain?.shortTitle ?? topic.domainId}
           </a>
         </nav>
@@ -85,7 +97,7 @@ export function TopicPage() {
           {domain && (
             <Badge tone="info">
               {domain.shortTitle}
-              {domain.examWeight !== null ? ` · ${domain.examWeight}%` : ''}
+              {` · ${weightBadge(domain)}`}
             </Badge>
           )}
           <Badge>{difficultyLabel[topic.difficulty]}</Badge>
@@ -105,10 +117,7 @@ export function TopicPage() {
           {isComplete ? '✓ Completed — mark as not done' : 'Mark as completed'}
         </button>
         {quizQuestions.length > 0 && (
-          <Link
-            className="btn btn--secondary"
-            to={`${ckadCourse.route}/practice/${topic.domainId}`}
-          >
+          <Link className="btn btn--secondary" to={`${course.route}/practice/${topic.domainId}`}>
             Practise this domain ({quizQuestions.length} questions on this topic)
           </Link>
         )}
@@ -130,6 +139,17 @@ export function TopicPage() {
           <RichList items={topic.howItWorks} />
         </Collapsible>
 
+        {topic.diagrams?.length ? (
+          <Collapsible
+            title="Visual flow"
+            icon="🧭"
+            count={`${topic.diagrams.length} diagram${topic.diagrams.length === 1 ? '' : 's'}`}
+            defaultOpen
+          >
+            <DiagramList diagrams={topic.diagrams} />
+          </Collapsible>
+        ) : null}
+
         <Collapsible
           id="key-objects"
           title="Important objects and fields"
@@ -144,7 +164,7 @@ export function TopicPage() {
             >
               <div className="row">
                 <strong>{object.kind}</strong>
-                <Badge>{object.apiVersion}</Badge>
+                {object.apiVersion ? <Badge>{object.apiVersion}</Badge> : null}
               </div>
               <p className="muted" style={{ marginBottom: '0.35rem' }}>
                 <RichText text={object.purpose} />
@@ -375,13 +395,15 @@ export function TopicPage() {
           <ul className="topic-list">
             {related.map((candidate) => (
               <li key={candidate.id}>
-                <Link className="topic-row" to={`${ckadCourse.route}/topics/${candidate.id}`}>
+                <Link className="topic-row" to={`${course.route}/topics/${candidate.id}`}>
                   <span className="topic-row__status" aria-hidden="true">
                     🔗
                   </span>
                   <span className="topic-row__body">
                     <span className="topic-row__title">{candidate.title}</span>
-                    <span className="topic-row__meta">{candidate.oneLiner}</span>
+                    <span className="topic-row__meta">
+                      <RichText text={candidate.oneLiner} />
+                    </span>
                   </span>
                 </Link>
               </li>
@@ -392,18 +414,18 @@ export function TopicPage() {
 
       <nav className="lesson-nav" aria-label="Lesson navigation">
         {previous ? (
-          <Link className="btn btn--secondary" to={`${ckadCourse.route}/topics/${previous.id}`}>
+          <Link className="btn btn--secondary" to={`${course.route}/topics/${previous.id}`}>
             ← {previous.title}
           </Link>
         ) : (
           <span />
         )}
         {next ? (
-          <Link className="btn" to={`${ckadCourse.route}/topics/${next.id}`}>
+          <Link className="btn" to={`${course.route}/topics/${next.id}`}>
             {next.title} →
           </Link>
         ) : (
-          <Link className="btn" to={`${ckadCourse.route}/exams`}>
+          <Link className="btn" to={`${course.route}/exams`}>
             Last lesson — try a mock exam →
           </Link>
         )}

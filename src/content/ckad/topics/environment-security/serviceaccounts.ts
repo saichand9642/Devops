@@ -38,6 +38,64 @@ export const serviceaccounts: Topic = {
     '`imagePullSecrets` can be attached to a ServiceAccount rather than to every Pod, in which case every Pod using that account inherits them.',
     'The identity string RBAC matches is `system:serviceaccount:<namespace>:<name>`, and all ServiceAccounts in a namespace belong to the group `system:serviceaccounts:<namespace>`.',
   ],
+  diagrams: [
+    {
+      kind: 'sequence',
+      title: 'How a Pod gets an identity',
+      caption:
+        'Every Pod has a ServiceAccount whether you set one or not. If you did not choose, it is "default", which normally can do nothing.',
+      participants: [
+        { id: 'pod', label: 'Pod' },
+        { id: 'kl', label: 'kubelet' },
+        { id: 'api', label: 'API server' },
+      ],
+      messages: [
+        { from: 'pod', to: 'kl', label: 'spec.serviceAccountName: deployer' },
+        { from: 'kl', to: 'api', label: 'request a projected token' },
+        { from: 'api', to: 'kl', label: 'short-lived, audience-bound token', kind: 'return' },
+        { from: 'kl', to: 'pod', label: 'mount it at /var/run/secrets/...', kind: 'return' },
+        { from: 'pod', to: 'api', label: 'API call with that bearer token' },
+        { from: 'api', to: 'api', label: 'authenticate, then check RBAC' },
+        { from: 'api', to: 'pod', label: 'allowed, or 403', kind: 'return' },
+      ],
+    },
+    {
+      kind: 'flow',
+      title: 'Giving a Pod permission, end to end',
+      caption:
+        'Four objects. Miss any one and the Pod gets a 403 that looks like a bug in your code.',
+      nodes: [
+        {
+          label: 'Create the ServiceAccount',
+          detail: 'kubectl create sa deployer',
+          tone: 'accent',
+        },
+        {
+          label: 'Create the Role',
+          detail: 'kubectl create role r --verb=get,list --resource=pods',
+        },
+        {
+          label: 'Bind them',
+          detail: 'kubectl create rolebinding b --role=r --serviceaccount=ns:deployer',
+          arrowLabel: 'the step people skip',
+        },
+        {
+          label: 'Point the Pod at it',
+          detail: 'spec.serviceAccountName: deployer',
+          arrowLabel: 'not an annotation',
+          branch: {
+            label: 'Field omitted',
+            detail: 'The Pod silently uses "default" and gets 403s',
+          },
+        },
+        {
+          label: 'Confirm from the Pod',
+          detail: 'kubectl auth can-i --as=system:serviceaccount:ns:deployer list pods',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'ServiceAccount',

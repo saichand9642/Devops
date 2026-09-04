@@ -31,6 +31,64 @@ export const workloadResources: Topic = {
     'Jobs require `restartPolicy: OnFailure` or `Never` in the Pod template - `Always` is rejected, because "run to completion" and "always restart" contradict each other.',
     'All five embed the same Pod template, so every skill from the Pod topics transfers directly.',
   ],
+  diagrams: [
+    {
+      kind: 'decision',
+      title: 'Which workload resource?',
+      caption:
+        'Read the verbs in the task. "Serve", "finish", "every night", "one per node" each map to exactly one answer.',
+      question: 'How does the work behave over time?',
+      branches: [
+        {
+          condition: 'runs forever and serves requests',
+          result: 'Deployment',
+          detail: 'Stateless, interchangeable replicas, safe rollouts',
+          tone: 'accent',
+        },
+        {
+          condition: 'runs forever and needs identity or storage per replica',
+          result: 'StatefulSet',
+          detail: 'Stable names web-0, web-1 and per-replica volumes',
+        },
+        {
+          condition: 'must run on every node',
+          result: 'DaemonSet',
+          detail: 'Log shippers, node agents; no replica count',
+        },
+        {
+          condition: 'runs to completion, once',
+          result: 'Job',
+          detail: 'completions, parallelism, backoffLimit',
+        },
+      ],
+    },
+    {
+      kind: 'nested',
+      title: 'Who owns whom',
+      caption:
+        'You edit the top box. Everything below is created for you - which is why deleting Pods by hand never sticks.',
+      root: {
+        label: 'Deployment',
+        detail: 'You write this. Holds the Pod template and strategy.',
+        tone: 'accent',
+        children: [
+          {
+            label: 'ReplicaSet (revision 1)',
+            detail: 'Scaled to 0 after a rollout, kept for rollback',
+            tone: 'muted',
+          },
+          {
+            label: 'ReplicaSet (revision 2)',
+            detail: 'One ReplicaSet per distinct Pod template',
+            children: [
+              { label: 'Pod web-7c9f-abcde', detail: 'Recreated if deleted' },
+              { label: 'Pod web-7c9f-fghij', detail: 'Recreated if deleted' },
+            ],
+          },
+        ],
+      },
+    },
+  ],
   keyObjects: [
     {
       kind: 'StatefulSet',

@@ -29,6 +29,41 @@ export const initContainers: Topic = {
     "Resource accounting: the Pod's effective request is the *maximum* of (the largest init container request) and (the sum of app container requests), because init containers do not run at the same time as the app. Native sidecars are added to the app container sum, since they do run concurrently.",
     'Init containers cannot be added or removed on a running Pod; you change the Pod template and let the workload controller recreate the Pods.',
   ],
+  diagrams: [
+    {
+      kind: 'flow',
+      title: 'Init containers run to completion, in order',
+      caption:
+        'App containers do not start until every init container has exited 0. That is what makes init containers a gate, not a sidecar.',
+      nodes: [
+        { label: 'Pod scheduled to a node' },
+        {
+          label: 'initContainers[0] runs alone',
+          detail: 'Status shows Init:0/2',
+          tone: 'accent',
+          branch: {
+            label: 'Exits non-zero',
+            detail: 'Restarted per restartPolicy; app never starts',
+          },
+        },
+        {
+          label: 'initContainers[1] runs alone',
+          detail: 'Status shows Init:1/2',
+          arrowLabel: 'only after 0 exits 0',
+          branch: {
+            label: 'Blocks forever',
+            detail: 'A wait-for loop that never succeeds shows as Init:1/2',
+          },
+        },
+        {
+          label: 'All app containers start together',
+          detail: 'Status becomes PodInitializing then Running',
+          arrowLabel: 'all init exited 0',
+          tone: 'success',
+        },
+      ],
+    },
+  ],
   keyObjects: [
     {
       kind: 'Pod',
