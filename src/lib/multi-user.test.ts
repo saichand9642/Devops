@@ -11,6 +11,7 @@ import {
   type ProgressState,
 } from './storage'
 import { clearSession, writeSession } from './access'
+import { OTHER_TEST_EMAIL, TEST_EMAIL } from '../test/session'
 
 /**
  * One browser, several learners.
@@ -21,13 +22,9 @@ import { clearSession, writeSession } from './access'
  * can appear in another's app.
  */
 
-/*
- * ALICE is on the shipped access list, so she can hold a session. BOB is only
- * ever addressed explicitly: storage keys are derived from the address alone,
- * and deliberately do not consult the list.
- */
-const ALICE = 'saichand.kanimeraka@tenetic.com'
-const BOB_EMAIL = 'someone.else@tenetic.com'
+/* Two people on the access list the suite mocks in `src/test/setup.ts`. */
+const ALICE = TEST_EMAIL
+const BOB_EMAIL = OTHER_TEST_EMAIL
 
 const withTopic = (topicId: string): ProgressState => {
   const state = createEmptyState(1000)
@@ -48,7 +45,7 @@ describe('progress is per signed-in address', () => {
   })
 
   it('treats a differently-cased address as the same person', () => {
-    expect(progressKey(' Saichand.Kanimeraka@Tenetic.com ')).toBe(progressKey(ALICE))
+    expect(progressKey(`  ${ALICE.toUpperCase()} `)).toBe(progressKey(ALICE))
   })
 
   it('falls back to the shared record when nobody is signed in', () => {
@@ -79,7 +76,7 @@ describe('progress is per signed-in address', () => {
   it('starts an address that has never signed in here with an empty record', () => {
     saveState(withTopic('pods'), ALICE)
 
-    const fresh = loadState('nobody@tenetic.com')
+    const fresh = loadState('nobody@example.test')
     expect(fresh.topics).toEqual({})
     expect(fresh.exams).toEqual([])
     expect(fresh.studyDays).toEqual([])
@@ -109,7 +106,7 @@ describe('progress is per signed-in address', () => {
   it('keys two people on the same domain separately', () => {
     // A guard against ever keying storage on the matching list entry (here a
     // domain rule) rather than on the individual address.
-    expect(progressKey('first@tenetic.com')).not.toBe(progressKey('second@tenetic.com'))
+    expect(progressKey('first@team.example.test')).not.toBe(progressKey('second@team.example.test'))
   })
 })
 

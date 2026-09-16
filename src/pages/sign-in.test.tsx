@@ -4,7 +4,13 @@ import userEvent from '@testing-library/user-event'
 import { App } from '../App'
 import { createEmptyState, saveState, type ProgressState } from '../lib/storage'
 import { LAST_EMAIL_KEY, SESSION_KEY } from '../lib/access'
-import { TEST_EMAIL, signInForTest } from '../test/session'
+import {
+  BLOCKED_TEST_EMAIL,
+  OTHER_TEST_EMAIL,
+  TEST_DOMAIN_EMAIL,
+  TEST_EMAIL,
+  signInForTest,
+} from '../test/session'
 
 const goTo = (path = '/') => {
   window.history.pushState({}, '', path)
@@ -44,7 +50,7 @@ describe('the email gate', () => {
     const user = userEvent.setup()
     goTo()
 
-    await user.type(screen.getByLabelText(/email address/i), 'stranger@example.com')
+    await user.type(screen.getByLabelText(/email address/i), BLOCKED_TEST_EMAIL)
     await user.click(screen.getByRole('button', { name: /continue/i }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/not on the access list/i)
@@ -66,7 +72,7 @@ describe('the email gate', () => {
     const user = userEvent.setup()
     goTo()
 
-    await user.type(screen.getByLabelText(/email address/i), 'stranger@example.com')
+    await user.type(screen.getByLabelText(/email address/i), BLOCKED_TEST_EMAIL)
     await user.click(screen.getByRole('button', { name: /continue/i }))
     expect(await screen.findByRole('alert')).toBeVisible()
 
@@ -97,6 +103,16 @@ describe('the email gate', () => {
     expect(await screen.findByRole('link', { name: /^CKAD dashboard$/i })).toBeVisible()
   })
 
+  it('admits somebody matched only by a domain rule on the list', async () => {
+    const user = userEvent.setup()
+    goTo()
+
+    await user.type(screen.getByLabelText(/email address/i), TEST_DOMAIN_EMAIL)
+    await user.click(screen.getByRole('button', { name: /continue/i }))
+
+    expect(await screen.findByRole('link', { name: /^CKAD dashboard$/i })).toBeVisible()
+  })
+
   it('does not ask again on the next visit', () => {
     signInForTest()
     goTo()
@@ -106,7 +122,7 @@ describe('the email gate', () => {
   })
 
   it('locks out a remembered address once it leaves the access list', () => {
-    signInForTest('removed.person@example.com')
+    signInForTest('removed.person@example.test')
     goTo()
 
     expect(screen.getByLabelText(/email address/i)).toBeVisible()
@@ -174,7 +190,7 @@ describe('signing out and back in', () => {
   it('does not leak one learner"s progress into another"s session', async () => {
     const user = userEvent.setup()
     saveState(withCompletedLesson('pods'), TEST_EMAIL)
-    saveState(withCompletedLesson('probes'), 'someone.else@tenetic.com')
+    saveState(withCompletedLesson('probes'), OTHER_TEST_EMAIL)
     signInForTest()
     goTo('/progress')
 
