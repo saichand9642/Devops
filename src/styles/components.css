@@ -1379,6 +1379,13 @@
 .diagram-alt-list li {
   overflow-wrap: break-word;
   white-space: pre-wrap;
+  /*
+   * Grid items default to min-width: auto, so a long unbreakable token - an
+   * API call name in a sequence label, for instance - sizes the track to its
+   * min-content width and pushes the list past a narrow viewport. Allowing
+   * the item to shrink lets overflow-wrap actually break it.
+   */
+  min-width: 0;
 }
 
 /* Boxes */

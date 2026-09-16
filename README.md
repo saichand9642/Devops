@@ -9,7 +9,7 @@ An installable, offline-capable study app for DevOps. It has two sections.
 
 Each covers its complete published curriculum from beginner level to exam-ready, with flow diagrams on every lesson.
 
-**Interview preparation** — 111 questions across 12 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
+**Interview preparation** — 603 questions across 12 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
 
 Built as a React + TypeScript + Vite Progressive Web App. No backend, no account, no tracking — everything runs in your browser and your progress stays on your device.
 
@@ -27,7 +27,7 @@ Built as a React + TypeScript + Vite Progressive Web App. No backend, no account
 | **Mock exams**              | Timed papers weighted per domain, scored per domain, with attempt history saved locally                                                                                                                                                                                                                                                                                                                                                            |
 | **258 reference commands**  | Searchable kubectl / Helm / Kustomize and Terraform CLI references with copy buttons, plus the YAML and HCL templates worth memorising                                                                                                                                                                                                                                                                                                             |
 | **Search**                  | Across lesson text, objects and fields, commands and the question bank — filterable by domain, difficulty and result type, per course                                                                                                                                                                                                                                                                                                              |
-| **111 interview questions** | 12 topics, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                                           |
+| **603 interview questions** | 12 topics, ~50 each, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                                 |
 | **Progress tracking**       | Per-lesson status, practice history, exam attempts, study streak and an exam-readiness indicator — plus interview recall — with JSON export and import                                                                                                                                                                                                                                                                                             |
 
 ### Diagrams
@@ -99,15 +99,15 @@ A separate section from the courses, at `/interview`. A course teaches a syllabu
 
 | Topic                  | Questions |     | Topic                      | Questions |
 | ---------------------- | --------- | --- | -------------------------- | --------- |
-| 🐳 Docker & containers | 18        |     | 🏗️ Terraform & IaC         | 8         |
-| ☸️ Kubernetes          | 16        |     | 📈 Prometheus & monitoring | 7         |
-| 🔧 Jenkins & CI/CD     | 10        |     | 📋 Ansible                 | 7         |
-| ☁️ AWS                 | 10        |     | 🔍 Splunk & log management | 6         |
-| ⚙️ GitHub Actions      | 8         |     | 🐍 Python for DevOps       | 8         |
-|                        |           |     | 🐚 Shell scripting         | 6         |
-|                        |           |     | 🐧 Linux & troubleshooting | 7         |
+| 🐳 Docker & containers | 52        |     | 🏗️ Terraform & IaC         | 50        |
+| ☸️ Kubernetes          | 51        |     | 📈 Prometheus & monitoring | 50        |
+| 🔧 Jenkins & CI/CD     | 50        |     | 📋 Ansible                 | 50        |
+| ☁️ AWS                 | 50        |     | 🔍 Splunk & log management | 50        |
+| ⚙️ GitHub Actions      | 50        |     | 🐍 Python for DevOps       | 50        |
+|                        |           |     | 🐚 Shell scripting         | 50        |
+|                        |           |     | 🐧 Linux & troubleshooting | 50        |
 
-**111 questions in total: 30 basic, 38 intermediate and 43 senior.** 26 are multiple choice (18 single-answer, 8 select-all), 17 are scenario questions of the "production is broken, walk me through it" kind, and the remaining 68 are open questions. They carry 49 diagrams and 111 code samples.
+**603 questions in total: 152 basic, 264 intermediate and 187 senior.** 125 are multiple choice (91 single-answer, 34 select-all), 53 are scenario questions of the "production is broken, walk me through it" kind, and the remaining 425 are open questions. They carry 177 diagrams and 657 code samples.
 
 Every question has the same shape, and all of it is written for a beginner to follow:
 
@@ -115,7 +115,7 @@ Every question has the same shape, and all of it is written for a beginner to fo
 - **How to answer** — the answer in plain language, in the order you would actually say it
 - **Code** — real Dockerfiles, manifests, pipelines, HCL, playbooks, Python and shell, syntax-highlighted and copyable
 - **Diagrams** — the same typed-data SVG diagrams the lessons use, for anything with a flow worth drawing (image layers and the build cache, a pod's path to Running, a rolling update, OOMKill, a Jenkins pipeline, the Terraform apply loop, Prometheus scraping, layered network diagnosis)
-- **What makes it a senior answer** — on 60 of them, the extra the interviewer is listening for
+- **What makes it a senior answer** — the extra the interviewer is listening for, on the questions that warrant it
 - **Traps to avoid** — the wrong answers that sound right
 - **Likely follow-ups** — what they ask next once you answer well
 
@@ -257,10 +257,16 @@ src/
 │   ├── interview.test.ts           # interview content integrity tests
 │   └── interview/                  # the interview section - NOT a Course
 │       ├── index.ts                # the InterviewTrack: topic registry + lookups
-│       └── topics/                 # one file per topic: docker.ts, kubernetes.ts,
-│                                   #   jenkins.ts, github-actions.ts, aws.ts,
-│                                   #   terraform.ts, prometheus.ts, ansible.ts,
-│                                   #   splunk.ts, python.ts, shell.ts, linux.ts
+│       └── topics/                 # one DIRECTORY per topic, each with an
+│           ├── docker/             #   index.ts (the InterviewTopic) plus several
+│           │   ├── index.ts        #   question files grouped by theme, so no
+│           │   ├── core.ts         #   single file grows unmanageably long
+│           │   ├── images.ts
+│           │   ├── runtime.ts
+│           │   └── operations.ts
+│           └── ...                 # kubernetes/, jenkins/, github-actions/, aws/,
+│                                   #   terraform/, prometheus/, ansible/, splunk/,
+│                                   #   python/, shell/, linux/
 ├── lib/
 │   ├── diagram-layout.ts           # pure, unit-tested diagram geometry
 │   ├── hcl-language.ts             # highlight.js definition for HCL/Terraform
@@ -303,7 +309,7 @@ If a new course's objects are not Kubernetes-shaped, note that `KeyObject.apiVer
 
 The interview content uses its own model (`InterviewTopic`, `InterviewQuestion` in `src/content/types.ts`), deliberately not `Course`. Reusing `Course` would have meant lessons with no labs and a mock exam with no blueprint; a separate model costs one registry and reuses every UI primitive.
 
-To add a question, append an `InterviewQuestion` to the relevant file in `src/content/interview/topics/`. To add a topic, create the file, export an `InterviewTopic`, and add it to the array in `src/content/interview/index.ts` — nothing else needs touching, as the hub, the topic route, the revision queue and the home page all read from that registry.
+To add a question, append an `InterviewQuestion` to the relevant themed file in `src/content/interview/topics/<topic>/` (or add a new file and spread it into that topic's `index.ts`). To add a topic, create the directory with an `index.ts` exporting an `InterviewTopic`, and add it to the array in `src/content/interview/index.ts` — nothing else needs touching, as the hub, the topic route, the revision queue and the home page all read from that registry.
 
 `src/content/interview.test.ts` enforces the rules: globally unique `itv-`-prefixed ids, every MCQ answer key pointing at an option that exists, never all options correct and never none, `mcq` having exactly one answer and `multi` at least two, every topic spanning basic to advanced, an explanation on every question, only registered code languages, no hardcoded credentials, and no markdown markers in diagram text (SVG would print the backticks literally).
 
@@ -337,7 +343,7 @@ The suite covers:
 - **Diagram rendering** — kind labels, captions, the text-version disclosure, `aria-hidden` on the SVG, unique marker ids per instance, and one lifeline per sequence participant
 - **HCL highlighting** — the hand-written `highlight.js` definition, pinning each token class the stylesheet colours, plus HTML escaping so a sample can never inject markup
 - **Exam generation** — both courses: full-length papers honouring the blueprint, determinism for a given seed, 100% and 0% scoring paths, and per-domain drills
-- **Interview content integrity** — the 111 questions: unique prefixed ids, answer keys pointing at options that exist, never all or none correct, `mcq` with one answer and `multi` with several, basic-to-advanced coverage in every topic, registered code languages only, no hardcoded credentials, and no markdown markers in SVG diagram text
+- **Interview content integrity** — the 603 questions: unique prefixed ids, answer keys pointing at options that exist, never all or none correct, `mcq` with one answer and `multi` with several, basic-to-advanced coverage in every topic, registered code languages only, no hardcoded credentials, and no markdown markers in SVG diagram text
 - **Interview behaviour** — the answer stays hidden until asked for, a choice question refuses to grade until you commit to an option, an open question reveals without grading, recall persists and un-marks on a second click, a flagged question reaches the cross-topic revision queue, and `/interview/review` outranks the dynamic `/interview/:topicId` route
 - **Interview recall accounting** — only _I know this_ moves the bar, review and untouched are counted apart, the suggested next topic moves on as questions are answered, and a state saved before the interview section existed migrates with its courses intact
 
@@ -369,7 +375,7 @@ That verification used a throwaway script outside the repository, so it adds no 
 ## Known limitations
 
 - **Mock exams cannot fully auto-grade performance-based tasks.** The real CKAD runs in a live cluster; this app has no cluster. Multiple-choice and command questions are auto-scored, and lab tasks are scored from a checkpoint list you confirm after submitting. That is honest but it depends on you being honest with yourself.
-- **The content chunks are large.** CKAD is about 1.45 MB (400 KB gzipped), Terraform about 890 KB (250 KB gzipped) and the interview bank about 360 KB (124 KB gzipped), for a total precache of roughly 3.1 MB. That is the deliberate cost of every lesson being available offline — the service worker precaches everything on first visit. The chunks are split per course and the interview bank has its own, so editing a CKAD lesson does not invalidate the cached Terraform or interview bundle, and the framework and app-shell chunks are separate. Measured on a phone-sized viewport with a 4× CPU throttle over simulated 4G, first contentful paint is about **2.1 s**; after the first visit the service worker serves from cache. Both course bundles are nonetheless in the critical path, because the home page reads lesson counts and progress from them. The next optimisation is to split course **metadata** from course **content** and lazy-load the content per route — that is a real refactor rather than a config change, so it has not been done.
+- **The content chunks are large.** CKAD is about 1.45 MB (400 KB gzipped), Terraform about 890 KB (250 KB gzipped) and the interview bank about 1.79 MB (594 KB gzipped), for a total precache of roughly 4.5 MB. That is the deliberate cost of every lesson being available offline — the service worker precaches everything on first visit. The chunks are split per course and the interview bank has its own, so editing a CKAD lesson does not invalidate the cached Terraform or interview bundle, and the framework and app-shell chunks are separate. Measured on a phone-sized viewport with a 4× CPU throttle over simulated 4G, first contentful paint is about **2.1 s**; after the first visit the service worker serves from cache. Both course bundles are nonetheless in the critical path, because the home page reads lesson counts and progress from them. The next optimisation is to split course **metadata** from course **content** and lazy-load the content per route — that is a real refactor rather than a config change, so it has not been done.
 - **Interview progress is what you say it is.** Whether you can answer a question out loud cannot be measured by a web app, so the interview section asks you and believes you. The percentage is only as honest as your self-marking, and it is deliberately not called a readiness score.
 - **Progress is per browser.** There is no account, so it does not follow you between devices or between Safari and Chrome on the same phone. Use export/import to move it.
 - **Labs need your own tooling.** The CKAD labs need a cluster — kind, minikube or k3d all work — and a few need extras and say so: metrics-server for `kubectl top`, a policy-enforcing CNI such as Calico for the NetworkPolicy lab, and an ingress controller for the Ingress lab. The Terraform labs are deliberately built on the credential-free `local`, `random`, `time` and `null` providers, so objectives 1 to 7 can be practised with **no cloud account at all**. Only objective 8 needs an HCP Terraform account, and the free tier is sufficient.
