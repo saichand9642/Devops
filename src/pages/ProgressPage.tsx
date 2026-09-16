@@ -6,6 +6,7 @@ import { courseCompletion, domainStats, practiceStats, studyStreak } from '../li
 import { parseImport, toExportEnvelope } from '../lib/storage'
 import { weightBadge } from '../lib/domain-label'
 import { readFileAsText } from '../lib/read-file'
+import { storageMayBeEvicted } from '../lib/install-state'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { Badge } from '../components/ui/Badge'
 
@@ -127,8 +128,10 @@ export function ProgressPage() {
         </nav>
         <h1>Progress &amp; data</h1>
         <p className="muted">
-          Everything is stored in this browser only. There is no account and no server - which also
-          means progress does not follow you to another device unless you export and import it.
+          Everything is stored in this browser on this device only. There is no account and no
+          server, so your progress stays here across refreshes and updates - and a different phone,
+          laptop or browser starts fresh, showing nothing of what you have done here. Use export and
+          import below to move it deliberately.
         </p>
       </header>
 
@@ -141,6 +144,21 @@ export function ProgressPage() {
             <strong>Progress cannot be saved in this browser.</strong> Local storage is unavailable
             or full - private browsing mode is the usual cause. You can still use the app, but
             nothing will persist when you close the tab.
+          </div>
+        </div>
+      )}
+
+      {storageAvailable && storageMayBeEvicted() && (
+        <div className="notice notice--warning">
+          <span className="notice__icon" aria-hidden="true">
+            📲
+          </span>
+          <div>
+            <strong>Add this to your Home Screen to keep your progress.</strong> In a Safari tab,
+            iOS deletes a site&rsquo;s saved data after about seven days without opening it - so a
+            gap between study sessions would clear everything here. Tap the Share button, then{' '}
+            <strong>Add to Home Screen</strong>. Installed, it is exempt and your progress stays
+            put.
           </div>
         </div>
       )}

@@ -18,10 +18,37 @@ describe('progress export and import', () => {
     window.localStorage.clear()
   })
 
-  it('explains that progress is local to this browser', async () => {
+  it('explains that progress is local to this browser and this device', async () => {
     goTo('/progress')
     expect(await screen.findByRole('heading', { level: 1, name: /progress & data/i })).toBeVisible()
-    expect(screen.getByText(/stored in this browser only/i)).toBeVisible()
+    expect(screen.getByText(/stored in this browser on this device only/i)).toBeVisible()
+    expect(screen.getByText(/starts fresh/i)).toBeVisible()
+  })
+
+  it('tells an iPhone user in a Safari tab to install, because iOS clears storage', async () => {
+    // A browser tab on iOS - where the seven-day eviction actually applies.
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15',
+      configurable: true,
+    })
+    Object.defineProperty(window.navigator, 'maxTouchPoints', { value: 5, configurable: true })
+
+    goTo('/progress')
+    expect(await screen.findByRole('heading', { level: 1, name: /progress & data/i })).toBeVisible()
+    expect(screen.getByText(/add this to your home screen/i)).toBeVisible()
+    expect(screen.getByText(/seven days/i)).toBeVisible()
+  })
+
+  it('does not show the install warning on a desktop browser', async () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36',
+      configurable: true,
+    })
+    Object.defineProperty(window.navigator, 'maxTouchPoints', { value: 0, configurable: true })
+
+    goTo('/progress')
+    expect(await screen.findByRole('heading', { level: 1, name: /progress & data/i })).toBeVisible()
+    expect(screen.queryByText(/add this to your home screen/i)).not.toBeInTheDocument()
   })
 
   it('exports progress as a downloadable JSON file', async () => {
