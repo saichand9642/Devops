@@ -5,6 +5,7 @@ import { App } from '../App'
 import { loadState } from '../lib/storage'
 import { buildExam } from '../lib/exam-builder'
 import { ckadCourse } from '../content/courses'
+import { signInForTest } from '../test/session'
 
 const goTo = (path: string) => {
   window.history.pushState({}, '', path)
@@ -14,6 +15,7 @@ const goTo = (path: string) => {
 describe('mock exam configuration', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('states clearly that the questions are original practice questions', async () => {
@@ -62,6 +64,7 @@ describe('mock exam configuration', () => {
 describe('mock exam scoring', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('hides all correctness while the exam is running', async () => {

@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { courseIndexes } from '../content/registry'
+import { courseIdForTopic, courseIndex, courseIndexes } from '../content/registry'
 import { useProgress } from '../lib/use-progress'
+import { useAccess } from '../lib/use-access'
 import { courseCompletion, domainStats, practiceStats, studyStreak } from '../lib/stats'
 import { parseImport, toExportEnvelope } from '../lib/storage'
 import { weightBadge } from '../lib/domain-label'
@@ -15,6 +16,7 @@ type Notice = { tone: 'success' | 'danger' | 'info'; text: string } | null
 export function ProgressPage() {
   const { state, storageAvailable, resetAll, replaceState, mergeIntoState, setTheme } =
     useProgress()
+  const { email, signOut } = useAccess()
   const fileInput = useRef<HTMLInputElement>(null)
   const [notice, setNotice] = useState<Notice>(null)
   const [pendingImport, setPendingImport] = useState<ReturnType<typeof parseImport> | null>(null)
@@ -39,6 +41,11 @@ export function ProgressPage() {
   }
   const streak = studyStreak(state)
   const attempts = state.exams
+
+  /* Where this learner left off, resolved back to a lesson they can reopen. */
+  const currentTopicId = state.lastVisitedTopicId
+  const currentCourse = currentTopicId ? courseIndex(courseIdForTopic(currentTopicId)) : undefined
+  const currentTopic = currentTopicId ? currentCourse?.topicById.get(currentTopicId) : undefined
 
   const exportProgress = () => {
     const envelope = toExportEnvelope(state)
@@ -128,10 +135,11 @@ export function ProgressPage() {
         </nav>
         <h1>Progress &amp; data</h1>
         <p className="muted">
-          Everything is stored in this browser on this device only. There is no account and no
-          server, so your progress stays here across refreshes and updates - and a different phone,
-          laptop or browser starts fresh, showing nothing of what you have done here. Use export and
-          import below to move it deliberately.
+          Everything is stored in this browser on this device only, under the email address you
+          signed in with. There is no server, so your progress stays here across refreshes and
+          updates - and a different phone, laptop or browser starts fresh, showing nothing of what
+          you have done here, even with the same address. Use export and import below to move it
+          deliberately.
         </p>
       </header>
 
@@ -174,6 +182,42 @@ export function ProgressPage() {
           <div>{notice.text}</div>
         </div>
       )}
+
+      <section className="card stack" aria-labelledby="account">
+        <h2 id="account" className="card__title">
+          Signed in
+        </h2>
+        <p className="muted">
+          Everything on this page belongs to <strong className="mono">{email}</strong>. Signing out
+          leaves it untouched: sign back in with the same address on this device and it all returns,
+          while somebody else signing in here gets their own separate record.
+        </p>
+        <dl className="account-summary">
+          <div>
+            <dt>Lessons completed</dt>
+            <dd>
+              {completion.completed} of {completion.total}
+            </dd>
+          </div>
+          <div>
+            <dt>Currently on</dt>
+            <dd>
+              {currentTopic && currentCourse ? (
+                <Link to={`${currentCourse.course.route}/topics/${currentTopic.id}`}>
+                  {currentTopic.title}
+                </Link>
+              ) : (
+                'Not started yet'
+              )}
+            </dd>
+          </div>
+        </dl>
+        <div className="row">
+          <button type="button" className="btn btn--secondary" onClick={signOut}>
+            Sign out
+          </button>
+        </div>
+      </section>
 
       <section className="card stack" aria-labelledby="summary">
         <h2 id="summary" className="card__title">

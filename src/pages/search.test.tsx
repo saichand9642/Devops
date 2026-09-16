@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from '../App'
+import { signInForTest } from '../test/session'
 
 const goTo = (path: string) => {
   window.history.pushState({}, '', path)
@@ -9,6 +10,11 @@ const goTo = (path: string) => {
 }
 
 describe('search page', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+    signInForTest()
+  })
+
   it('finds a lesson by typing a term', async () => {
     const user = userEvent.setup()
     goTo('/ckad/search')

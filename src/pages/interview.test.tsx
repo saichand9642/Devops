@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { App } from '../App'
 import { loadState } from '../lib/storage'
 import { interviewTopics } from '../content/interview'
+import { signInForTest } from '../test/session'
 
 const goTo = (path: string) => {
   window.history.pushState({}, '', path)
@@ -23,6 +24,7 @@ const mcqCorrect = firstMcq.correct
 describe('interview hub', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('lists every topic with a link into it', async () => {
@@ -54,6 +56,7 @@ describe('interview hub', () => {
 describe('interview question card', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('hides the answer until it is asked for', async () => {
@@ -127,6 +130,7 @@ describe('interview question card', () => {
 describe('interview recall tracking', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('persists "I know this" and lets the same click undo it', async () => {
@@ -197,6 +201,7 @@ describe('interview recall tracking', () => {
 describe('interview routing', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('ranks /interview/review above the dynamic topic route', async () => {

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { App } from '../App'
 import { loadState } from '../lib/storage'
 import { ckadQuestions } from '../content/ckad/questions'
+import { signInForTest } from '../test/session'
 
 const goTo = (path: string) => {
   window.history.pushState({}, '', path)
@@ -13,6 +14,7 @@ const goTo = (path: string) => {
 describe('practice quiz scoring', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('lists every domain on the practice hub with its question count', async () => {

@@ -1748,3 +1748,94 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* ------------------------------------------------------- sign-in gate + user */
+
+/*
+ * The gate renders on its own, before the app shell exists, so it centres
+ * itself in the viewport rather than living inside .app-main.
+ */
+.gate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: calc(env(safe-area-inset-top) + 1rem) 1rem calc(env(safe-area-inset-bottom) + 1rem);
+  background: var(--bg);
+}
+
+.gate__theme {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 0.5rem);
+  right: 0.5rem;
+}
+
+.gate__card {
+  width: 100%;
+  max-width: 30rem;
+  padding: 1.5rem;
+}
+
+.gate__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gate__title {
+  margin: 0;
+  font-size: 1.375rem;
+  line-height: 1.2;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+/*
+ * Hidden on the narrowest screens, where the toolbar has no room to spare:
+ * the button beside it still carries the full address in its accessible name.
+ */
+.account__name {
+  display: none;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+@media (min-width: 560px) {
+  .account__name {
+    display: inline;
+  }
+}
+
+.account-summary {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 560px) {
+  .account-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.account-summary dt {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-subtle);
+}
+
+.account-summary dd {
+  margin: 0.15rem 0 0;
+  font-weight: 650;
+}

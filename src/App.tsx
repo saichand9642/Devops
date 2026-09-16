@@ -1,4 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AccessProvider } from './lib/access-provider'
+import { useAccess } from './lib/use-access'
 import { ProgressProvider } from './lib/progress-provider'
 import { AppShell } from './components/layout/AppShell'
 import { PwaUpdater } from './components/PwaUpdater'
@@ -18,6 +20,7 @@ import { CourseDashboardRedirect } from './pages/CourseDashboardRedirect'
 import { InterviewHubPage } from './pages/InterviewHubPage'
 import { InterviewTopicPage } from './pages/InterviewTopicPage'
 import { InterviewReviewPage } from './pages/InterviewReviewPage'
+import { SignInPage } from './pages/SignInPage'
 
 /**
  * The route table.
@@ -32,9 +35,9 @@ import { InterviewReviewPage } from './pages/InterviewReviewPage'
  * `basename` comes from Vite's BASE_URL so the same build works at a domain
  * root and under a GitHub Pages repository sub-path.
  */
-export function App() {
+function Routed() {
   return (
-    <ProgressProvider>
+    <>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route element={<AppShell />}>
@@ -60,6 +63,33 @@ export function App() {
         </Routes>
       </BrowserRouter>
       <PwaUpdater />
+    </>
+  )
+}
+
+/**
+ * The gate, then the app.
+ *
+ * Nothing routed renders until somebody on the access list has signed in,
+ * because the signed-in address is what selects the progress record. Keying
+ * the provider on that address means switching learner tears down the old
+ * provider entirely, so no part of one person's progress can survive into the
+ * next person's session.
+ */
+function Gated() {
+  const { email } = useAccess()
+  if (!email) return <SignInPage />
+  return (
+    <ProgressProvider key={email} userEmail={email}>
+      <Routed />
     </ProgressProvider>
+  )
+}
+
+export function App() {
+  return (
+    <AccessProvider>
+      <Gated />
+    </AccessProvider>
   )
 }
