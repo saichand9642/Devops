@@ -195,3 +195,103 @@ describe('storage: merge keeps the better result', () => {
     expect(merged.studyDays).toEqual(['2026-01-01', '2026-01-02'])
   })
 })
+
+describe('storage: interview recall', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it('starts empty on a fresh install', () => {
+    expect(createEmptyState().interview).toEqual({})
+  })
+
+  it('round-trips a self-assessment', () => {
+    const state = createEmptyState(1000)
+    state.interview['itv-docker-1'] = { status: 'known', updatedAt: 1500 }
+    state.interview['itv-k8s-4'] = { status: 'review', updatedAt: 1600 }
+    expect(saveState(state)).toBe(true)
+
+    const loaded = loadState()
+    expect(loaded.interview['itv-docker-1']).toEqual({ status: 'known', updatedAt: 1500 })
+    expect(loaded.interview['itv-k8s-4']).toEqual({ status: 'review', updatedAt: 1600 })
+  })
+
+  it('gives a state written before the interview section an empty map', () => {
+    // Exactly what a learner who installed the app last month has stored.
+    const older = migrate({
+      schemaVersion: SCHEMA_VERSION,
+      topics: { pods: { status: 'completed', completedAt: 10 } },
+      questions: { 'db-q01': { lastCorrect: true, attempts: 1, correctCount: 1 } },
+      studyDays: ['2026-01-01'],
+    })
+
+    expect(older.interview).toEqual({})
+    // and nothing they had already earned was dropped on the way.
+    expect(older.topics['pods'].status).toBe('completed')
+    expect(older.questions['db-q01'].attempts).toBe(1)
+    expect(older.studyDays).toEqual(['2026-01-01'])
+  })
+
+  it('treats an unrecognised status as needing review', () => {
+    const migrated = migrate({
+      interview: {
+        a: { status: 'known', updatedAt: 5 },
+        b: { status: 'mastered', updatedAt: 6 },
+        c: { status: null, updatedAt: 7 },
+      },
+    })
+
+    expect(migrated.interview['a'].status).toBe('known')
+    expect(migrated.interview['b'].status).toBe('review')
+    expect(migrated.interview['c'].status).toBe('review')
+  })
+
+  it('ignores malformed interview entries instead of throwing', () => {
+    const migrated = migrate({ interview: { a: 'known', b: 42, c: { status: 'known' } } })
+    expect(migrated.interview['a']).toBeUndefined()
+    expect(migrated.interview['b']).toBeUndefined()
+    expect(migrated.interview['c'].status).toBe('known')
+  })
+
+  it('survives an interview field that is not an object at all', () => {
+    expect(migrate({ interview: 'nope' }).interview).toEqual({})
+    expect(migrate({ interview: [1, 2] }).interview).toEqual({})
+  })
+
+  it('merges by taking the most recent self-assessment', () => {
+    const current = createEmptyState()
+    current.interview = {
+      both: { status: 'known', updatedAt: 100 },
+      'only-here': { status: 'review', updatedAt: 100 },
+      newer: { status: 'known', updatedAt: 500 },
+    }
+
+    const incoming = migrate({
+      interview: {
+        both: { status: 'review', updatedAt: 200 },
+        'only-there': { status: 'known', updatedAt: 50 },
+        newer: { status: 'review', updatedAt: 300 },
+      },
+    })
+
+    const merged = mergeStates(current, incoming)
+    // A newer "review" must override an older "known", not the other way round.
+    expect(merged.interview['both']).toEqual({ status: 'review', updatedAt: 200 })
+    // A stale incoming entry loses to the newer local one.
+    expect(merged.interview['newer'].status).toBe('known')
+    // Entries on only one side are kept from both.
+    expect(merged.interview['only-here'].status).toBe('review')
+    expect(merged.interview['only-there'].status).toBe('known')
+  })
+
+  it('carries interview recall through an export and re-import', () => {
+    const state = createEmptyState(1000)
+    state.interview['itv-tf-2'] = { status: 'known', updatedAt: 2000 }
+
+    const envelope = JSON.stringify(toExportEnvelope(state))
+    const parsed = parseImport(envelope)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    expect(parsed.state.interview['itv-tf-2']).toEqual({ status: 'known', updatedAt: 2000 })
+  })
+})

@@ -10,7 +10,7 @@
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced'
 
 /** Language used for syntax highlighting of a code sample. */
-export type CodeLanguage = 'yaml' | 'bash' | 'json' | 'dockerfile' | 'hcl' | 'text'
+export type CodeLanguage = 'yaml' | 'bash' | 'json' | 'dockerfile' | 'hcl' | 'python' | 'text'
 
 export interface CodeSample {
   title: string
@@ -395,4 +395,80 @@ export interface PlannedCourse {
   subtitle: string
   icon: string
   note: string
+}
+
+/* ------------------------------------------------- interview preparation */
+
+/**
+ * Interview preparation is modelled separately from a certification course.
+ *
+ * A course is a curriculum: domains, lessons, a weighted exam. Interview prep
+ * is a question bank per technology, where the unit of study is a single
+ * question you can answer out loud. Forcing one model to serve both would
+ * have meant lessons with no labs and exams with no blueprint.
+ */
+export type InterviewLevel = 'basic' | 'intermediate' | 'advanced'
+
+/**
+ * How the question is asked.
+ * - `open`      "explain X" - the staple of a real interview
+ * - `mcq`       one correct option, for facts that are easy to half-know
+ * - `multi`     several correct options
+ * - `scenario`  "production is doing X at 2am - walk me through it"
+ */
+export type InterviewQuestionKind = 'open' | 'mcq' | 'multi' | 'scenario'
+
+export interface InterviewQuestion {
+  id: string
+  level: InterviewLevel
+  kind: InterviewQuestionKind
+  prompt: string
+  /**
+   * Code shown as part of the question itself - "what does this print?".
+   * Distinct from `code`, which illustrates the answer and stays hidden
+   * until the learner asks for it.
+   */
+  promptCode?: CodeSample[]
+  /** Required for `mcq` and `multi`. */
+  options?: ChoiceOption[]
+  /** Ids of the correct options. Required for `mcq` and `multi`. */
+  correct?: string[]
+  /** What the interviewer is actually checking. Shown before the answer. */
+  probing: string
+  /**
+   * The model answer, one string per paragraph. Written to be said out loud,
+   * beginner-first: the plain explanation comes before the nuance.
+   */
+  answer: string[]
+  /** The detail that separates a senior answer from a correct one. */
+  deeper?: string[]
+  code?: CodeSample[]
+  diagrams?: Diagram[]
+  /** Answers that sound right and are not. */
+  traps?: string[]
+  /** What they will very likely ask next. */
+  followUps?: string[]
+  tags: string[]
+}
+
+export interface InterviewTopic {
+  id: string
+  title: string
+  shortTitle: string
+  icon: string
+  order: number
+  /** One sentence, shown on the hub card. */
+  oneLiner: string
+  /** The things worth revising on the morning of the interview. */
+  headlines: string[]
+  questions: InterviewQuestion[]
+}
+
+export interface InterviewTrack {
+  id: string
+  title: string
+  subtitle: string
+  /** Route prefix, e.g. `/interview`. */
+  route: string
+  topics: InterviewTopic[]
 }

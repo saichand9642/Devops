@@ -51,6 +51,15 @@ export function primaryNavFor(course: Course): NavItem[] {
 export function secondaryNavFor(course: Course): NavItem[] {
   return [
     {
+      // Interview prep is not scoped to a course, so it lives here rather
+      // than in the per-course primary nav.
+      to: '/interview',
+      label: 'Interview prep',
+      shortLabel: 'Interview',
+      icon: '💬',
+      matchPrefix: true,
+    },
+    {
       to: `${course.route}/commands`,
       label: 'Command reference',
       shortLabel: 'Commands',

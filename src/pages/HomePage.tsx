@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { plannedCourses } from '../content/courses'
+import { interviewTopics } from '../content/interview'
+import { countInterview } from '../lib/interview-stats'
 import { courseIdForTopic, courseIndex, courseIndexes } from '../content/registry'
 import { useProgress } from '../lib/use-progress'
 import {
@@ -52,6 +54,7 @@ export function HomePage() {
   )
   const overallAccuracy = answered === 0 ? 0 : Math.round((correct / answered) * 100)
 
+  const interview = countInterview(interviewTopics, state)
   const readiness = readinessFor(activeCourse, state)
   const suggestion = dailySuggestion(activeCourse, state)
   const streak = studyStreak(state)
@@ -70,9 +73,11 @@ export function HomePage() {
       <header className="page-header">
         <h1>DevOps Learning Hub</h1>
         <p className="muted">
-          A study app for DevOps certifications, built to work offline on a phone.{' '}
-          {courseIndexes.length} {courseWord} installed:{' '}
-          {courseIndexes.map((entry) => entry.course.examCode).join(' and ')}.
+          A study app for DevOps, built to work offline on a phone. Two sections:{' '}
+          <strong>certification courses</strong> ({courseIndexes.length} {courseWord} -{' '}
+          {courseIndexes.map((entry) => entry.course.examCode).join(' and ')}) and{' '}
+          <strong>interview preparation</strong> ({interviewTopics.length} topics, {interview.total}{' '}
+          questions).
         </p>
       </header>
 
@@ -198,7 +203,7 @@ export function HomePage() {
       </section>
 
       <section aria-labelledby="courses" className="stack">
-        <h2 id="courses">Courses</h2>
+        <h2 id="courses">Certification courses</h2>
         <div className="card-grid card-grid--2">
           {perCourse.map(({ entry, completion }) => (
             <Link
@@ -245,6 +250,30 @@ export function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section aria-labelledby="interview" className="stack">
+        <h2 id="interview">Interview preparation</h2>
+        <Link className="card card--interactive stack-sm" to="/interview">
+          <div className="row">
+            <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
+              💬
+            </span>
+            <Badge tone="info">{interviewTopics.length} topics</Badge>
+            <Badge>{interview.total} questions</Badge>
+            {interview.review > 0 && <Badge tone="warning">{interview.review} to review</Badge>}
+          </div>
+          <strong className="card__title">DevOps interview questions</strong>
+          <p className="subtle" style={{ margin: 0 }}>
+            Docker, Kubernetes, Jenkins, AWS, Terraform, GitHub Actions, Prometheus, Splunk,
+            Ansible, Python, shell scripting and Linux - from first-round basics to senior scenario
+            rounds.
+          </p>
+          <ProgressBar value={interview.percent} showValue />
+          <p className="subtle" style={{ margin: 0 }}>
+            {interview.known} of {interview.total} you can answer out loud
+          </p>
+        </Link>
       </section>
 
       <section aria-labelledby="disclaimer" className="stack">

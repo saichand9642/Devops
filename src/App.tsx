@@ -15,13 +15,19 @@ import { CommandsPage } from './pages/CommandsPage'
 import { ProgressPage } from './pages/ProgressPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { CourseDashboardRedirect } from './pages/CourseDashboardRedirect'
+import { InterviewHubPage } from './pages/InterviewHubPage'
+import { InterviewTopicPage } from './pages/InterviewTopicPage'
+import { InterviewReviewPage } from './pages/InterviewReviewPage'
 
 /**
  * The route table.
  *
- * Every course-scoped page lives under `/:courseId/...`, so installing a
- * second course is purely a content change. Static paths such as `/progress`
- * are ranked above the dynamic segment by the router, so they still win.
+ * Two sections sit side by side: certification courses under
+ * `/:courseId/...`, and interview preparation under `/interview/...`.
+ *
+ * Installing another course is purely a content change. Static paths such as
+ * `/progress` and `/interview` are ranked above the dynamic `:courseId`
+ * segment by the router, so they win without needing to be declared first.
  *
  * `basename` comes from Vite's BASE_URL so the same build works at a domain
  * root and under a GitHub Pages repository sub-path.
@@ -34,6 +40,10 @@ export function App() {
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/interview" element={<InterviewHubPage />} />
+            {/* Static, so it is ranked above /interview/:topicId. */}
+            <Route path="/interview/review" element={<InterviewReviewPage />} />
+            <Route path="/interview/:topicId" element={<InterviewTopicPage />} />
             <Route path="/:courseId" element={<CourseDashboardPage />} />
             <Route path="/:courseId/topics/:topicId" element={<TopicPage />} />
             <Route path="/:courseId/search" element={<SearchPage />} />
