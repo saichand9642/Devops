@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
+  applyTheme,
   createEmptyState,
   loadState,
   mergeStates,
   saveState,
   clearState,
+  writeSharedTheme,
   type ExamAttempt,
   type InterviewStatus,
   type ProgressState,
@@ -16,8 +18,23 @@ import { ProgressContext, type ProgressApi } from './progress-context'
 
 const todayIso = (): string => new Date().toISOString().slice(0, 10)
 
-export function ProgressProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ProgressState>(() => loadState())
+/**
+ * Holds one learner's progress.
+ *
+ * `userEmail` chooses which stored record this instance reads and writes, so
+ * two people sharing a browser never see each other's lessons, practice
+ * history or exam attempts. It is expected to be mounted with a `key` of the
+ * same address: changing learner then re-creates the provider and re-reads
+ * from scratch rather than carrying the previous record in memory.
+ */
+export function ProgressProvider({
+  userEmail = null,
+  children,
+}: {
+  userEmail?: string | null
+  children: ReactNode
+}) {
+  const [state, setState] = useState<ProgressState>(() => loadState(userEmail))
   const [storageAvailable, setStorageAvailable] = useState(true)
   // The first render must not immediately write back what we just read.
   const hydrated = useRef(false)
@@ -32,17 +49,15 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       hydrated.current = true
       return
     }
-    setStorageAvailable(saveState(state))
-  }, [state])
+    setStorageAvailable(saveState(state, userEmail))
+  }, [state, userEmail])
 
-  // Keep the document theme attribute in sync with the stored preference.
+  // Keep the document theme attribute in sync with the stored preference, and
+  // mirror it outside the record so the sign-in screen - which renders before
+  // any learner is known - can use the same appearance.
   useEffect(() => {
-    const root = document.documentElement
-    if (state.theme === 'system') {
-      root.removeAttribute('data-theme')
-    } else {
-      root.setAttribute('data-theme', state.theme)
-    }
+    applyTheme(state.theme)
+    writeSharedTheme(state.theme)
   }, [state.theme])
 
   /** Every mutation goes through here, which is stable for the app's lifetime. */
@@ -187,10 +202,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   )
 
   const resetAll = useCallback(() => {
-    clearState()
+    clearState(userEmail)
     // The theme is a display preference, not progress, so it survives a reset.
     setState({ ...createEmptyState(), theme: latest.current.theme })
-  }, [])
+  }, [userEmail])
 
   const replaceState = useCallback(
     (next: ProgressState) => update(() => ({ ...next, theme: latest.current.theme })),

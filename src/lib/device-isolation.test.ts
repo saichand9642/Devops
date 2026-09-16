@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { STORAGE_KEY, createEmptyState, loadState, saveState, type ProgressState } from './storage'
+import { progressKey, createEmptyState, loadState, saveState, type ProgressState } from './storage'
+import { SESSION_KEY } from './access'
+import { signInForTest } from '../test/session'
 import { isInstalled, isIos, storageMayBeEvicted } from './install-state'
 
 /**
  * The device model, pinned down.
  *
  * Progress is deliberately per-device: it must survive everything that happens
- * on the device it was made on, and must never appear on another one. There is
- * no account and no server, so these properties come entirely from using
- * localStorage and from nothing in the app syncing it anywhere. These tests
+ * on the device it was made on, and must never appear on another one. The
+ * email gate picks WHICH record on this device is in use (see
+ * multi-user.test.ts) and changes nothing here - there is still no server, so
+ * these properties come entirely from using localStorage and from nothing in
+ * the app syncing it anywhere. These tests
  * exist so that stays true - a future sync feature, or a stray fetch, breaks
  * them loudly rather than quietly leaking one learner's progress to another.
  */
@@ -32,6 +36,7 @@ const populated = (): ProgressState => {
 describe('progress stays on the device that made it', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('survives reloading the page', () => {
@@ -59,8 +64,9 @@ describe('progress stays on the device that made it', () => {
   it('writes progress only under its own key, so nothing else can pick it up', () => {
     saveState(populated())
 
-    const keys = Object.keys(window.localStorage)
-    expect(keys).toEqual([STORAGE_KEY])
+    // The sign-in record and this learner's progress, and nothing else.
+    const keys = Object.keys(window.localStorage).sort()
+    expect(keys).toEqual([SESSION_KEY, progressKey()].sort())
   })
 
   it('a different device - separate storage - starts completely fresh', () => {
@@ -68,8 +74,10 @@ describe('progress stays on the device that made it', () => {
     expect(loadState().interview['itv-docker-1']).toBeDefined()
 
     // A second device has its own empty localStorage. Nothing is shared: no
-    // account, no server, no cookie, so there is nothing to carry across.
+    // server and no cookie, so there is nothing to carry across - signing in
+    // with the same address there starts from scratch.
     window.localStorage.clear()
+    signInForTest()
 
     const otherDevice = loadState()
     expect(otherDevice.topics).toEqual({})

@@ -1,19 +1,47 @@
 /**
  * Progress persistence.
  *
- * Everything the learner does is kept in a single versioned localStorage
- * record. Two rules drive the design:
+ * Everything one learner does is kept in a single versioned localStorage
+ * record. Three rules drive the design:
  *
  * 1. An app update must never silently discard progress. `migrate()` only ever
  *    adds missing fields and keeps unknown ones, and a record that cannot be
  *    parsed is quarantined under a backup key rather than overwritten.
- * 2. No login and no backend, so the record must also be exportable and
- *    importable as plain JSON.
+ * 2. No backend, so the record must also be exportable and importable as plain
+ *    JSON.
+ * 3. One record per signed-in address, so two people sharing a browser keep
+ *    separate lessons, practice history and exam attempts. The address only
+ *    picks the key - nothing is sent anywhere. See `progressKey()`.
  */
 
+import { normalizeEmail, readSession } from './access'
+
+/** The shared record, used when nobody is signed in. Also the key prefix. */
 export const STORAGE_KEY = 'devops-learning-hub.progress'
 export const BACKUP_KEY = 'devops-learning-hub.progress.corrupt-backup'
+/** Which address, if any, has taken over the pre-sign-in shared record. */
+export const CLAIMED_KEY = 'devops-learning-hub.progress.claimed-by'
+/**
+ * The theme, mirrored outside any one learner's record.
+ *
+ * The sign-in screen renders before anybody is identified, so it has no
+ * progress record to read the preference from; this is what it uses instead.
+ */
+export const THEME_KEY = 'devops-learning-hub.theme'
 export const SCHEMA_VERSION = 1
+
+/**
+ * Where one learner's record lives.
+ *
+ * Passing nothing uses whoever is signed in on this device; passing `null`
+ * addresses the shared pre-sign-in record explicitly.
+ */
+export function progressKey(email?: string | null): string {
+  const target = email === undefined ? readSession() : email
+  return target ? `${STORAGE_KEY}.user.${normalizeEmail(target)}` : STORAGE_KEY
+}
+
+const backupKey = (email?: string | null): string => `${progressKey(email)}.corrupt-backup`
 
 export type TopicStatus = 'not-started' | 'in-progress' | 'completed'
 export type ThemePreference = 'light' | 'dark' | 'system'
@@ -257,28 +285,75 @@ function safeSetItem(key: string, value: string): boolean {
   }
 }
 
-export function loadState(): ProgressState {
-  const stored = safeGetItem(STORAGE_KEY)
+function safeRemoveItem(key: string): void {
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    /* nothing we can do, and nothing to report to the learner */
+  }
+}
+
+/** Reads one learner's record. Omit `email` for whoever is signed in here. */
+export function loadState(email?: string | null): ProgressState {
+  const stored = safeGetItem(progressKey(email))
   if (!stored) return createEmptyState()
   try {
     return migrate(JSON.parse(stored) as unknown)
   } catch {
     // Keep the unreadable payload so nothing is lost, then start fresh.
-    safeSetItem(BACKUP_KEY, stored)
+    safeSetItem(backupKey(email), stored)
     return createEmptyState()
   }
 }
 
-export function saveState(state: ProgressState): boolean {
-  return safeSetItem(STORAGE_KEY, JSON.stringify(state))
+export function saveState(state: ProgressState, email?: string | null): boolean {
+  return safeSetItem(progressKey(email), JSON.stringify(state))
 }
 
-export function clearState(): void {
-  try {
-    window.localStorage.removeItem(STORAGE_KEY)
-  } catch {
-    /* nothing we can do, and nothing to report to the learner */
-  }
+export function clearState(email?: string | null): void {
+  safeRemoveItem(progressKey(email))
+}
+
+/**
+ * Hands the pre-sign-in record to the first person who signs in.
+ *
+ * Before the email gate existed there was one shared record. Whoever had been
+ * studying would otherwise open the new version, sign in, and find an empty
+ * app - so the first address to sign in adopts that record, once. `CLAIMED_KEY`
+ * records who took it, so the second person to sign in still starts fresh
+ * rather than inheriting somebody else's history.
+ *
+ * Returns true when a record was adopted.
+ */
+export function adoptSharedProgress(email: string): boolean {
+  if (!email) return false
+  const key = progressKey(email)
+  // Already has their own record - never overwrite it.
+  if (safeGetItem(key) !== null) return false
+
+  const shared = safeGetItem(STORAGE_KEY)
+  if (shared === null) return false
+  if (safeGetItem(CLAIMED_KEY) !== null) return false
+
+  if (!safeSetItem(key, shared)) return false
+  safeSetItem(CLAIMED_KEY, normalizeEmail(email))
+  return true
+}
+
+/** The theme chosen most recently on this device, for the sign-in screen. */
+export function readSharedTheme(): ThemePreference {
+  return asTheme(safeGetItem(THEME_KEY))
+}
+
+export function writeSharedTheme(theme: ThemePreference): void {
+  safeSetItem(THEME_KEY, theme)
+}
+
+/** Applies a theme preference to the document. */
+export function applyTheme(theme: ThemePreference): void {
+  const root = document.documentElement
+  if (theme === 'system') root.removeAttribute('data-theme')
+  else root.setAttribute('data-theme', theme)
 }
 
 export interface ExportEnvelope {

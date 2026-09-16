@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from '../App'
 import { createEmptyState, loadState, saveState, toExportEnvelope } from '../lib/storage'
+import { signInForTest } from '../test/session'
 
 const goTo = (path: string) => {
   window.history.pushState({}, '', path)
@@ -16,6 +17,7 @@ const jsonFile = (name: string, contents: unknown) =>
 describe('progress export and import', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('explains that progress is local to this browser and this device', async () => {
@@ -164,6 +166,7 @@ describe('progress export and import', () => {
 describe('progress reset', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('requires two confirmations and then clears progress but keeps the theme', async () => {

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ThemeToggle } from '../ThemeToggle'
 import { BrandMark } from './BrandMark'
+import { AccountButton } from './AccountButton'
 
 export function TopBar() {
   return (
@@ -21,6 +22,7 @@ export function TopBar() {
         <span aria-hidden="true">💾</span>
       </Link>
       <ThemeToggle />
+      <AccountButton />
     </header>
   )
 }

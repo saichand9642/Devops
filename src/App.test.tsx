@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from './App'
-import { STORAGE_KEY, loadState } from './lib/storage'
+import { loadState, progressKey } from './lib/storage'
+import { signInForTest } from './test/session'
 
 const renderApp = () => {
   window.history.pushState({}, '', '/')
@@ -12,6 +13,7 @@ const renderApp = () => {
 describe('navigation', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('renders the home page with the app name and the independence disclaimer', () => {
@@ -173,6 +175,7 @@ describe('navigation', () => {
 describe('progress persistence', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    signInForTest()
   })
 
   it('records a visit to a lesson so Continue Learning has a target', async () => {
@@ -198,7 +201,8 @@ describe('progress persistence', () => {
     await vi.waitFor(() => {
       expect(loadState().topics['pods'].status).toBe('completed')
     })
-    expect(window.localStorage.getItem(STORAGE_KEY)).toContain('completed')
+    // Written under the signed-in learner's own key, not a shared one.
+    expect(window.localStorage.getItem(progressKey())).toContain('completed')
 
     first.unmount()
 

@@ -11,7 +11,7 @@ Each covers its complete published curriculum from beginner level to exam-ready,
 
 **Interview preparation** — 603 questions across 12 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
 
-Built as a React + TypeScript + Vite Progressive Web App. No backend, no account, no tracking — everything runs in your browser and your progress stays on your device.
+Built as a React + TypeScript + Vite Progressive Web App. No backend and no tracking — everything runs in your browser and your progress stays on your device. Opening it asks for your email address and checks it against a list you control, so the app stays with the group you shared it with and each person keeps their own progress.
 
 > **This is an independent learning tool.** It is not affiliated with, endorsed by or sponsored by any certification body — including the Cloud Native Computing Foundation, the Linux Foundation and HashiCorp — and it is not an App Store application. Every practice question, lab and mock exam here is original material written for this app — none are real exam questions, and no leaked or recalled exam content is used.
 
@@ -127,6 +127,26 @@ All of it is original material written for this app, from public documentation a
 
 ---
 
+## Who can open it
+
+The app opens onto a sign-in screen asking for an email address. It is checked against **[`src/access/allowed-emails.ts`](src/access/allowed-emails.ts)** — a plain list you edit:
+
+```ts
+export const allowedEmails: readonly string[] = [
+  'saichand.kanimeraka@tenetic.com',
+  'teammate@tenetic.com',
+  // '@tenetic.com',   // or admit a whole domain
+]
+```
+
+Add an address and deploy, and that person can sign in. Delete it and deploy, and they are locked out the next time the app loads — the remembered sign-in is re-checked against the list on every start, not only when it is first entered. Matching ignores case and surrounding spaces, and an entry beginning with `@` matches every address on that domain. [`src/access/README.md`](src/access/README.md) has the details.
+
+The address is also the key to that person's progress: lessons, practice history, exam attempts, the study streak and the "continue where you left off" lesson are all stored per address, under `devops-learning-hub.progress.user.<email>`. Two people can therefore share one laptop or one phone without seeing each other's progress — signing out and back in as somebody else swaps the whole record over, and signing back in with the original address brings it all back untouched. Progress made before the gate existed is handed to the first address that signs in, so nothing is lost by updating.
+
+> **This is a doorway, not a lock.** The app is a static site with no server, so the list ships inside the JavaScript bundle and anyone who opens developer tools can read it, and there is no password proving somebody owns the address they typed. It keeps the app to the intended study group and keeps their progress apart. Do not put anything confidential behind it.
+
+---
+
 ## Running it locally
 
 Requires **Node.js 20.19 or newer** and npm.
@@ -235,6 +255,9 @@ Content is plain TypeScript, type-checked against `src/content/types.ts`. There 
 
 ```
 src/
+├── access/
+│   ├── allowed-emails.ts           # WHO may open the app - the only file to edit
+│   └── README.md                   # how to add and remove people
 ├── content/
 │   ├── types.ts                    # the content model: Topic, Question, Course, ...
 │   ├── courses.ts                  # course registry + "planned" courses
@@ -268,6 +291,7 @@ src/
 │                                   #   terraform/, prometheus/, ansible/, splunk/,
 │                                   #   python/, shell/, linux/
 ├── lib/
+│   ├── access.ts                   # the email gate: matching, session, per-user keys
 │   ├── diagram-layout.ts           # pure, unit-tested diagram geometry
 │   ├── hcl-language.ts             # highlight.js definition for HCL/Terraform
 │   ├── use-course.ts               # resolves the course from the route
@@ -334,6 +358,8 @@ The suite covers:
 - **Progress persistence** — marking complete, surviving a full remount, the study record, and the localStorage round trip
 - **Storage migration** — legacy shapes are upgraded rather than dropped, malformed records are quarantined, merge keeps the better result
 - **Per-device isolation** — progress survives reloads and repeated writes, is written under one key only, makes no network request, is not lost when a write fails, and a second device with its own storage starts completely empty; plus the iOS-only install prompt appearing on an iPhone in a tab and nowhere else
+- **The email gate** — the shipped list is non-empty and every entry is one this code can match, a listed address opens the app and an unlisted one does not, a deep link is gated as firmly as the home page, a typo is named as a typo rather than as a refusal, an address removed from the list revokes an already-remembered sign-in, case and stray spaces are forgiven, and a domain rule cannot be fooled by a lookalike domain
+- **Per-person progress** — two addresses on one browser keep separate records, an address that has never signed in starts empty, signing out and back in returns the same record untouched, one person's reset leaves the other alone, and progress made before the gate existed is inherited by the first signer only
 - **Quiz scoring** — every question kind, all-or-nothing multi-select, whitespace-insensitive command matching, retry queue
 - **Mock-exam scoring** — domain weighting of generated papers, per-domain breakdown, the pass mark, self-verified performance tasks
 - **Search** — index construction, AND semantics, ranking, and each filter
@@ -378,7 +404,8 @@ That verification used a throwaway script outside the repository, so it adds no 
 - **Mock exams cannot fully auto-grade performance-based tasks.** The real CKAD runs in a live cluster; this app has no cluster. Multiple-choice and command questions are auto-scored, and lab tasks are scored from a checkpoint list you confirm after submitting. That is honest but it depends on you being honest with yourself.
 - **The content chunks are large.** CKAD is about 1.45 MB (400 KB gzipped), Terraform about 890 KB (250 KB gzipped) and the interview bank about 1.79 MB (594 KB gzipped), for a total precache of roughly 4.5 MB. That is the deliberate cost of every lesson being available offline — the service worker precaches everything on first visit. The chunks are split per course and the interview bank has its own, so editing a CKAD lesson does not invalidate the cached Terraform or interview bundle, and the framework and app-shell chunks are separate. Measured on a phone-sized viewport with a 4× CPU throttle over simulated 4G, first contentful paint is about **2.1 s**; after the first visit the service worker serves from cache. Both course bundles are nonetheless in the critical path, because the home page reads lesson counts and progress from them. The next optimisation is to split course **metadata** from course **content** and lazy-load the content per route — that is a real refactor rather than a config change, so it has not been done.
 - **Interview progress is what you say it is.** Whether you can answer a question out loud cannot be measured by a web app, so the interview section asks you and believes you. The percentage is only as honest as your self-marking, and it is deliberately not called a readiness score.
-- **Progress is per browser, by design.** Everything you do is written to `localStorage` on the device you did it on. It survives refreshes, tab closes and app updates; a different phone, laptop or browser opens completely fresh and shows nothing of it. There is no account and no server, so there is nothing to sync and nothing to leak between devices - `src/lib/device-isolation.test.ts` pins that down, including a check that saving progress makes no network request. Use export/import to move it deliberately.
+- **Progress is per browser and per person, by design.** Everything you do is written to `localStorage` on the device you did it on, under the email address you signed in with. It survives refreshes, tab closes and app updates; a different phone, laptop or browser opens completely fresh and shows nothing of it, even with the same address. There is no server, so there is nothing to sync and nothing to leak between devices - `src/lib/device-isolation.test.ts` pins that down, including a check that saving progress makes no network request, and `src/lib/multi-user.test.ts` pins down the separation between two people sharing one browser. Use export/import to move it deliberately.
+- **The email gate is not authentication.** It is checked in the browser against a list compiled into the bundle, with no password and no server to verify anything, so a determined visitor can read the list or bypass the check. It exists to keep the app with the group it was shared with and to keep their progress records apart — treat it as a doorway, not a lock, and keep confidential material out of the content.
 - **iOS clears storage for sites you have not opened in a week.** In a Safari **tab**, iOS deletes a site's script-writable storage after roughly seven days without interaction, which would wipe your progress between study sessions. Installed to the Home Screen the app is exempt, so the progress page shows an install prompt when it detects an iPhone or iPad in a browser tab. This does not affect Android or desktop browsers.
 - **Labs need your own tooling.** The CKAD labs need a cluster — kind, minikube or k3d all work — and a few need extras and say so: metrics-server for `kubectl top`, a policy-enforcing CNI such as Calico for the NetworkPolicy lab, and an ingress controller for the Ingress lab. The Terraform labs are deliberately built on the credential-free `local`, `random`, `time` and `null` providers, so objectives 1 to 7 can be practised with **no cloud account at all**. Only objective 8 needs an HCP Terraform account, and the free tier is sufficient.
 - **The curriculum moves.** CKAD content was verified against CKAD_Curriculum_v1.35 / Kubernetes v1.35 on 2026-09-03; Terraform content against the published 004 exam content list on 2026-09-04. Re-check the official sources before your exam.
