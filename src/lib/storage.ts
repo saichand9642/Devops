@@ -33,6 +33,20 @@ export interface QuestionProgress {
   lastAnsweredAt: number
 }
 
+/**
+ * Self-assessed recall for one interview question.
+ *
+ * Deliberately not scored like a quiz: you cannot auto-mark "explain how a
+ * Deployment rolls out". The learner says whether they could answer it aloud,
+ * and `review` drives the cross-topic revision queue.
+ */
+export type InterviewStatus = 'known' | 'review'
+
+export interface InterviewProgress {
+  status: InterviewStatus
+  updatedAt: number
+}
+
 export interface ExamAnswerRecord {
   questionId: string
   domainId: string
@@ -71,6 +85,8 @@ export interface ProgressState {
   topics: Record<string, TopicProgress>
   /** question id -> practice history */
   questions: Record<string, QuestionProgress>
+  /** interview question id -> self-assessed recall */
+  interview: Record<string, InterviewProgress>
   /** Newest first. */
   exams: ExamAttempt[]
   lastVisitedTopicId?: string
@@ -86,6 +102,7 @@ export function createEmptyState(now = Date.now()): ProgressState {
     theme: 'system',
     topics: {},
     questions: {},
+    interview: {},
     exams: [],
     studyDays: [],
   }
@@ -149,6 +166,19 @@ export function migrate(raw: unknown, now = Date.now()): ProgressState {
     }
   }
 
+  const interview: Record<string, InterviewProgress> = {}
+  if (isRecord(raw.interview)) {
+    for (const [id, value] of Object.entries(raw.interview)) {
+      if (!isRecord(value)) continue
+      // Anything that is not a known status is treated as "needs review",
+      // which is the safe direction to be wrong in.
+      interview[id] = {
+        status: value.status === 'known' ? 'known' : 'review',
+        updatedAt: asNumber(value.updatedAt, now),
+      }
+    }
+  }
+
   const exams: ExamAttempt[] = Array.isArray(raw.exams)
     ? raw.exams.filter(isRecord).map((attempt) => ({
         id:
@@ -198,6 +228,7 @@ export function migrate(raw: unknown, now = Date.now()): ProgressState {
     theme: asTheme(raw.theme),
     topics,
     questions,
+    interview,
     exams,
     ...(typeof raw.lastVisitedTopicId === 'string'
       ? { lastVisitedTopicId: raw.lastVisitedTopicId }
@@ -328,6 +359,17 @@ export function mergeStates(current: ProgressState, incoming: ProgressState): Pr
           }
   }
 
+  const interview: Record<string, InterviewProgress> = { ...current.interview }
+  for (const [id, incomingEntry] of Object.entries(incoming.interview)) {
+    const existing = interview[id]
+    // Most recent self-assessment wins: it is the learner's latest opinion of
+    // whether they can answer it, and an older "known" should not mask a
+    // newer "review".
+    if (!existing || incomingEntry.updatedAt >= existing.updatedAt) {
+      interview[id] = incomingEntry
+    }
+  }
+
   const examsById = new Map(current.exams.map((attempt) => [attempt.id, attempt]))
   for (const attempt of incoming.exams) examsById.set(attempt.id, attempt)
 
@@ -335,6 +377,7 @@ export function mergeStates(current: ProgressState, incoming: ProgressState): Pr
     ...current,
     topics,
     questions,
+    interview,
     exams: [...examsById.values()].sort((a, b) => b.submittedAt - a.submittedAt),
     studyDays: [...new Set([...current.studyDays, ...incoming.studyDays])].sort(),
     lastVisitedTopicId: current.lastVisitedTopicId ?? incoming.lastVisitedTopicId,

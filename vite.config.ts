@@ -100,6 +100,9 @@ export default defineConfig(({ mode }) => ({
            */
           if (id.includes('/src/content/ckad/')) return 'content-ckad'
           if (id.includes('/src/content/terraform/')) return 'content-terraform'
+          // Interview preparation is its own body of content on the same rule:
+          // adding a question must not invalidate any cached course.
+          if (id.includes('/src/content/interview/')) return 'content-interview'
           if (id.includes('/src/content/')) return 'content-shared'
           return undefined
         },

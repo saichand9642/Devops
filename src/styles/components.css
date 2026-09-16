@@ -1492,3 +1492,252 @@
   font-weight: 700;
   color: var(--text-muted);
 }
+
+/* ------------------------------------------------ interview preparation */
+
+/* Two button tones the certification pages never needed: the "I know this"
+   and "needs review" toggles read as state, so they stay filled when active. */
+.btn--success {
+  background: var(--success);
+  color: var(--text-inverted);
+  border-color: var(--success);
+}
+
+.btn--success:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn--warning {
+  background: var(--warning);
+  color: var(--text-inverted);
+  border-color: var(--warning);
+}
+
+.btn--warning:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.itv-topic-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .itv-topic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .itv-topic-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.itv-topic-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.itv-topic-card__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex: none;
+}
+
+.itv-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.itv-levels span {
+  white-space: nowrap;
+}
+
+/* ---- one question */
+
+.itv-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.itv-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.itv-card__number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.itv-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.itv-card__prompt {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 650;
+  overflow-wrap: break-word;
+}
+
+.itv-card__probing {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-left: 3px solid var(--primary);
+  background: var(--bg-sunken);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  overflow-wrap: break-word;
+}
+
+.itv-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.itv-option {
+  width: 100%;
+  min-height: var(--tap-target);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  overflow-wrap: break-word;
+}
+
+.itv-option:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.itv-option:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.itv-option:disabled {
+  cursor: default;
+}
+
+.itv-option__marker {
+  flex: none;
+  width: 1.1em;
+  font-weight: 700;
+}
+
+.itv-option--selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.itv-option--correct {
+  border-color: var(--success);
+  background: var(--success-soft);
+}
+
+.itv-option--wrong {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.itv-card__answer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+
+.itv-verdict {
+  margin: 0;
+  font-weight: 650;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  overflow-wrap: break-word;
+}
+
+.itv-verdict--right {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.itv-verdict--wrong {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.itv-heading {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.itv-heading--warn {
+  color: var(--warning);
+}
+
+.itv-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.itv-question-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* One flex item holding the whole option label, so inline code inside it
+   flows as text rather than becoming its own flex item. */
+.itv-option__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}

@@ -1,5 +1,11 @@
 import { createContext } from 'react'
-import type { ExamAttempt, ProgressState, ThemePreference, TopicStatus } from './storage'
+import type {
+  ExamAttempt,
+  ProgressState,
+  ThemePreference,
+  TopicStatus,
+  InterviewStatus,
+} from './storage'
 
 export interface ProgressApi {
   state: ProgressState
@@ -11,6 +17,8 @@ export interface ProgressApi {
   toggleTopicCompleted: (topicId: string) => void
   recordAnswer: (questionId: string, correct: boolean) => void
   clearAnswer: (questionId: string) => void
+  /** Self-assessed recall for an interview question. `null` clears it. */
+  setInterviewStatus: (questionId: string, status: InterviewStatus | null) => void
   saveExamAttempt: (attempt: ExamAttempt) => void
   updateExamAttempt: (attemptId: string, next: ExamAttempt) => void
   deleteExamAttempt: (attemptId: string) => void

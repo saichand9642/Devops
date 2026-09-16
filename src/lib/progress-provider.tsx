@@ -7,6 +7,7 @@ import {
   saveState,
   clearState,
   type ExamAttempt,
+  type InterviewStatus,
   type ProgressState,
   type ThemePreference,
   type TopicStatus,
@@ -144,6 +145,17 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [update],
   )
 
+  const setInterviewStatus = useCallback(
+    (questionId: string, status: InterviewStatus | null) =>
+      update((previous) => {
+        const interview = { ...previous.interview }
+        if (status === null) delete interview[questionId]
+        else interview[questionId] = { status, updatedAt: Date.now() }
+        return { ...previous, interview }
+      }),
+    [update],
+  )
+
   const saveExamAttempt = useCallback(
     (attempt: ExamAttempt) =>
       update((previous) => ({
@@ -200,6 +212,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       toggleTopicCompleted,
       recordAnswer,
       clearAnswer,
+      setInterviewStatus,
       saveExamAttempt,
       updateExamAttempt,
       deleteExamAttempt,
@@ -216,6 +229,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       toggleTopicCompleted,
       recordAnswer,
       clearAnswer,
+      setInterviewStatus,
       saveExamAttempt,
       updateExamAttempt,
       deleteExamAttempt,

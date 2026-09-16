@@ -2,6 +2,7 @@ import hljs from 'highlight.js/lib/core'
 import bash from 'highlight.js/lib/languages/bash'
 import dockerfile from 'highlight.js/lib/languages/dockerfile'
 import json from 'highlight.js/lib/languages/json'
+import python from 'highlight.js/lib/languages/python'
 import yaml from 'highlight.js/lib/languages/yaml'
 import { hcl } from './hcl-language'
 import type { CodeLanguage } from '../content/types'
@@ -16,6 +17,7 @@ hljs.registerLanguage('yaml', yaml)
 hljs.registerLanguage('bash', bash)
 hljs.registerLanguage('json', json)
 hljs.registerLanguage('dockerfile', dockerfile)
+hljs.registerLanguage('python', python)
 hljs.registerLanguage('hcl', hcl)
 
 const escapeHtml = (value: string): string =>
