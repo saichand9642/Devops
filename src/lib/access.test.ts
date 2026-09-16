@@ -12,27 +12,44 @@ import {
   readSession,
   writeSession,
 } from './access'
-import { allowedEmails } from '../access/allowed-emails'
+import type * as AllowedEmailsModule from '../access/allowed-emails'
 import { TEST_EMAIL } from '../test/session'
 
 const LIST = ['someone@example.com', 'Other.Person@Example.org', '@tenetic.com']
 
+/**
+ * The real `src/access/allowed-emails.ts` is mocked for the rest of the suite
+ * (see `src/test/setup.ts`), because editing it is the whole point of it and
+ * must never break the build. These two checks are the exception: they read
+ * the file as shipped, because a list that is empty or malformed would lock
+ * everybody out of the deployed app - which IS worth failing the build for.
+ */
 describe('the shipped access list', () => {
-  it('is not empty, which would lock everybody out', () => {
-    expect(allowedEmails.length).toBeGreaterThan(0)
+  const shipped = async (): Promise<readonly string[]> => {
+    const actual = await vi.importActual<typeof AllowedEmailsModule>('../access/allowed-emails')
+    return actual.allowedEmails
+  }
+
+  it('is not empty, which would lock everybody out', async () => {
+    expect((await shipped()).length).toBeGreaterThan(0)
   })
 
-  it('contains only entries this module can match', () => {
-    for (const entry of allowedEmails) {
+  it('contains only entries that can ever match somebody', async () => {
+    for (const entry of await shipped()) {
+      // Deliberately checked AFTER normalising: stray case and spaces are
+      // forgiven at runtime, so they must not fail anyone's build.
       const normalized = normalizeEmail(entry)
-      expect(normalized, `"${entry}" has stray case or spaces`).toBe(entry)
       expect(
-        normalized.startsWith('@') ? normalized.length > 1 : isEmailShaped(normalized),
-        `"${entry}" is neither an address nor an @domain rule`,
+        normalized.startsWith('@')
+          ? isEmailShaped(`someone${normalized}`)
+          : isEmailShaped(normalized),
+        `"${entry}" is neither an email address nor an @domain rule, so it can never let anybody in`,
       ).toBe(true)
     }
   })
+})
 
+describe('the list the suite runs against', () => {
   it('admits the address the tests sign in with', () => {
     expect(isAllowedEmail(TEST_EMAIL)).toBe(true)
   })
