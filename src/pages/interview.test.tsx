@@ -30,9 +30,15 @@ describe('interview hub', () => {
   it('lists every topic with a link into it', async () => {
     goTo('/interview')
     await screen.findByRole('heading', { level: 1, name: /devops interview preparation/i })
-    const main = within(screen.getByRole('main'))
+    // Scoped to the Topics section on purpose: the "Start with ..." suggestion
+    // above it also links to a topic, and which topic that is depends on the
+    // question bank. The assertion here is that every topic is LISTED.
+    const topics = within(screen.getByRole('region', { name: /^topics$/i }))
     for (const topic of interviewTopics) {
-      expect(main.getByRole('link', { name: new RegExp(topic.title, 'i') }), topic.id).toBeVisible()
+      expect(
+        topics.getByRole('link', { name: new RegExp(topic.title, 'i') }),
+        topic.id,
+      ).toBeVisible()
     }
   })
 
