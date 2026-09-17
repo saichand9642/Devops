@@ -1839,3 +1839,90 @@
   margin: 0.15rem 0 0;
   font-weight: 650;
 }
+
+/* ------------------------------------------- primary sections in the sidebar */
+
+/*
+ * The two things the app is FOR - interview preparation and courses - are
+ * given more weight than anything else in the sidebar, and are grouped inside
+ * a panel so they read as one block rather than as two more links in a list.
+ */
+.sidebar__section--main {
+  padding: 0.5rem;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.nav-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.6rem 0.65rem;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+a.nav-primary:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+a.nav-primary[aria-current='page'] {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+/* The Courses header is a grouping label, not a destination - nothing to click. */
+.nav-primary--static {
+  cursor: default;
+}
+
+.nav-primary__icon {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.nav-primary__body {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.nav-primary__label {
+  font-size: 0.9375rem;
+  line-height: 1.25;
+}
+
+.nav-primary__meta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+
+.nav-primary__bar {
+  margin: 0.1rem 0.65rem 0.5rem;
+}
+
+/* Course links are children of the Courses header, so they are indented. */
+.nav-primary__children {
+  display: grid;
+  gap: 0.15rem;
+  margin-left: 1.75rem;
+}
+
+.sidebar__link--course {
+  min-height: 2.25rem;
+  padding-block: 0.35rem;
+}
+
+.sidebar__link--course[aria-current='location'] {
+  background: var(--surface-hover);
+  color: var(--text);
+}
