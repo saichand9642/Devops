@@ -9,7 +9,7 @@ export const splunkTopic: InterviewTopic = {
   title: 'Splunk & log management',
   shortTitle: 'Splunk',
   icon: '🔍',
-  order: 9,
+  order: 10,
   oneLiner:
     'Indexes, SPL, forwarders, index-time versus search-time, and the performance questions that follow.',
   headlines: [

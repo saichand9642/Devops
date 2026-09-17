@@ -9,7 +9,7 @@ An installable, offline-capable study app for DevOps. It has two sections.
 
 Each covers its complete published curriculum from beginner level to exam-ready, with flow diagrams on every lesson.
 
-**Interview preparation** — 603 questions across 12 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
+**Interview preparation** — 653 questions across 13 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Grafana & observability, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
 
 Built as a React + TypeScript + Vite Progressive Web App. No backend and no tracking — everything runs in your browser and your progress stays on your device. Opening it asks for your email address and checks it against a list you control, so the app stays with the group you shared it with and each person keeps their own progress.
 
@@ -27,7 +27,7 @@ Built as a React + TypeScript + Vite Progressive Web App. No backend and no trac
 | **Mock exams**              | Timed papers weighted per domain, scored per domain, with attempt history saved locally                                                                                                                                                                                                                                                                                                                                                            |
 | **258 reference commands**  | Searchable kubectl / Helm / Kustomize and Terraform CLI references with copy buttons, plus the YAML and HCL templates worth memorising                                                                                                                                                                                                                                                                                                             |
 | **Search**                  | Across lesson text, objects and fields, commands and the question bank — filterable by domain, difficulty and result type, per course                                                                                                                                                                                                                                                                                                              |
-| **603 interview questions** | 12 topics, ~50 each, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                                 |
+| **653 interview questions** | 13 topics, ~50 each, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                                 |
 | **Progress tracking**       | Per-lesson status, practice history, exam attempts, study streak and an exam-readiness indicator — plus interview recall — with JSON export and import                                                                                                                                                                                                                                                                                             |
 
 ### Diagrams
@@ -101,20 +101,21 @@ A separate section from the courses, at `/interview`. A course teaches a syllabu
 | ---------------------- | --------- | --- | -------------------------- | --------- |
 | 🐳 Docker & containers | 52        |     | 🏗️ Terraform & IaC         | 50        |
 | ☸️ Kubernetes          | 51        |     | 📈 Prometheus & monitoring | 50        |
-| 🔧 Jenkins & CI/CD     | 50        |     | 📋 Ansible                 | 50        |
-| ☁️ AWS                 | 50        |     | 🔍 Splunk & log management | 50        |
-| ⚙️ GitHub Actions      | 50        |     | 🐍 Python for DevOps       | 50        |
+| 🔧 Jenkins & CI/CD     | 50        |     | 📊 Grafana & observability | 50        |
+| ☁️ AWS                 | 50        |     | 📋 Ansible                 | 50        |
+| ⚙️ GitHub Actions      | 50        |     | 🔍 Splunk & log management | 50        |
+|                        |           |     | 🐍 Python for DevOps       | 50        |
 |                        |           |     | 🐚 Shell scripting         | 50        |
 |                        |           |     | 🐧 Linux & troubleshooting | 50        |
 
-**603 questions in total: 152 basic, 264 intermediate and 187 senior.** 125 are multiple choice (91 single-answer, 34 select-all), 53 are scenario questions of the "production is broken, walk me through it" kind, and the remaining 425 are open questions. They carry 177 diagrams and 657 code samples.
+**653 questions in total: 162 basic, 286 intermediate and 205 senior.** 134 are multiple choice (97 single-answer, 37 select-all), 67 are scenario questions of the "production is broken, walk me through it" kind, and the remaining 452 are open questions. They carry 192 diagrams and 713 code samples.
 
 Every question has the same shape, and all of it is written for a beginner to follow:
 
 - **What they are testing** — the reason the question is being asked, which is usually not the surface topic
 - **How to answer** — the answer in plain language, in the order you would actually say it
 - **Code** — real Dockerfiles, manifests, pipelines, HCL, playbooks, Python and shell, syntax-highlighted and copyable
-- **Diagrams** — the same typed-data SVG diagrams the lessons use, for anything with a flow worth drawing (image layers and the build cache, a pod's path to Running, a rolling update, OOMKill, a Jenkins pipeline, the Terraform apply loop, Prometheus scraping, layered network diagnosis)
+- **Diagrams** — the same typed-data SVG diagrams the lessons use, for anything with a flow worth drawing (image layers and the build cache, a pod's path to Running, a rolling update, OOMKill, a Jenkins pipeline, the Terraform apply loop, Prometheus scraping, the six-link path a log line takes from container stdout to Loki, trace context crossing service boundaries, layered network diagnosis)
 - **What makes it a senior answer** — the extra the interviewer is listening for, on the questions that warrant it
 - **Traps to avoid** — the wrong answers that sound right
 - **Likely follow-ups** — what they ask next once you answer well
@@ -370,7 +371,7 @@ The suite covers:
 - **Diagram rendering** — kind labels, captions, the text-version disclosure, `aria-hidden` on the SVG, unique marker ids per instance, and one lifeline per sequence participant
 - **HCL highlighting** — the hand-written `highlight.js` definition, pinning each token class the stylesheet colours, plus HTML escaping so a sample can never inject markup
 - **Exam generation** — both courses: full-length papers honouring the blueprint, determinism for a given seed, 100% and 0% scoring paths, and per-domain drills
-- **Interview content integrity** — the 603 questions: unique prefixed ids, answer keys pointing at options that exist, never all or none correct, `mcq` with one answer and `multi` with several, basic-to-advanced coverage in every topic, registered code languages only, no hardcoded credentials, and no markdown markers in SVG diagram text
+- **Interview content integrity** — the 653 questions: unique prefixed ids, answer keys pointing at options that exist, never all or none correct, `mcq` with one answer and `multi` with several, basic-to-advanced coverage in every topic, registered code languages only, no hardcoded credentials, and no markdown markers in SVG diagram text
 - **Interview behaviour** — the answer stays hidden until asked for, a choice question refuses to grade until you commit to an option, an open question reveals without grading, recall persists and un-marks on a second click, a flagged question reaches the cross-topic revision queue, and `/interview/review` outranks the dynamic `/interview/:topicId` route
 - **Interview recall accounting** — only _I know this_ moves the bar, review and untouched are counted apart, the suggested next topic moves on as questions are answered, and a state saved before the interview section existed migrates with its courses intact
 

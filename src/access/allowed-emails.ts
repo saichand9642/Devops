@@ -23,6 +23,10 @@
  */
 export const allowedEmails: readonly string[] = [
   'saichand.kanimeraka@gmail.com',
+  'prasad.chodavarapu007@gmail.com',
+  'naveenkundeti11@gmail.com',
+  'suhaspd1025@gmail.com',
+  'mahansivakumar1518@gmail.com',
 
   // Add teammates below, one per line:
   // 'teammate@tenetic.com',

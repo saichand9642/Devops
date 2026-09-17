@@ -9,7 +9,7 @@ export const linuxTopic: InterviewTopic = {
   title: 'Linux & troubleshooting',
   shortTitle: 'Linux',
   icon: '🐧',
-  order: 12,
+  order: 13,
   oneLiner:
     'Permissions, processes, disk, memory, networking and the "the server is slow" question you will definitely be asked.',
   headlines: [
