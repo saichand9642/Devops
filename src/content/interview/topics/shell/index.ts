@@ -9,7 +9,7 @@ export const shellTopic: InterviewTopic = {
   title: 'Shell scripting',
   shortTitle: 'Shell',
   icon: '🐚',
-  order: 11,
+  order: 12,
   oneLiner:
     'Bash that does not break in production: strict mode, quoting, exit codes, traps and text processing.',
   headlines: [

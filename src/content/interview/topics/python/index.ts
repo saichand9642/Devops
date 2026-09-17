@@ -9,7 +9,7 @@ export const pythonTopic: InterviewTopic = {
   title: 'Python for DevOps',
   shortTitle: 'Python',
   icon: '🐍',
-  order: 10,
+  order: 11,
   oneLiner:
     'The language features, error handling, API and file work, and the coding exercises that come up in DevOps interviews.',
   headlines: [

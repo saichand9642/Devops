@@ -11,7 +11,7 @@ import type { Diagram, InterviewQuestion } from './types'
 /**
  * Interview content integrity tests.
  *
- * The interview section is 111 hand-written questions across 12 topic files.
+ * The interview section is a large hand-written bank across 13 topic files.
  * These are the guard rails: unique ids, MCQ answer keys that point at real
  * options, no half-written questions, no raw markdown leaking into places
  * that render as plain text, and a level spread that actually reaches senior.
@@ -61,6 +61,7 @@ describe('interview track', () => {
         'aws',
         'terraform',
         'prometheus',
+        'grafana',
         'ansible',
         'splunk',
         'python',
@@ -68,7 +69,7 @@ describe('interview track', () => {
         'linux',
       ]),
     )
-    expect(interviewTopics).toHaveLength(12)
+    expect(interviewTopics).toHaveLength(13)
   })
 
   it('is routed apart from the certification courses', () => {

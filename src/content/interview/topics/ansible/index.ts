@@ -9,7 +9,7 @@ export const ansibleTopic: InterviewTopic = {
   title: 'Ansible',
   shortTitle: 'Ansible',
   icon: '📋',
-  order: 8,
+  order: 9,
   oneLiner:
     'Agentless configuration management: playbooks, inventory, idempotence, roles, Vault and where it fits next to Terraform.',
   headlines: [

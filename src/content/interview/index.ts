@@ -6,6 +6,7 @@ import { githubActionsTopic } from './topics/github-actions'
 import { awsTopic } from './topics/aws'
 import { terraformTopic } from './topics/terraform'
 import { prometheusTopic } from './topics/prometheus'
+import { grafanaTopic } from './topics/grafana'
 import { ansibleTopic } from './topics/ansible'
 import { splunkTopic } from './topics/splunk'
 import { pythonTopic } from './topics/python'
@@ -27,6 +28,7 @@ export const interviewTopics: InterviewTopic[] = [
   awsTopic,
   terraformTopic,
   prometheusTopic,
+  grafanaTopic,
   ansibleTopic,
   splunkTopic,
   pythonTopic,
