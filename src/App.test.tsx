@@ -163,7 +163,55 @@ describe('navigation', () => {
       .filter((link) => link.getAttribute('aria-current') === 'page')
       .map((link) => link.textContent)
     expect(onDashboard.length).toBeGreaterThan(0)
-    expect(onDashboard.every((text) => /CKAD|Learn/i.test(text ?? ''))).toBe(true)
+    expect(onDashboard.every((text) => /CKAD|Course/i.test(text ?? ''))).toBe(true)
+  })
+
+  it('leads with interview preparation, then courses, on the home page', () => {
+    renderApp()
+    const main = screen.getByRole('main')
+
+    // The app is FOR two things. They come before the course-specific
+    // detail cards, and interview preparation comes first.
+    const sections = [...main.querySelectorAll('h2')].map((h) => h.textContent ?? '')
+    const interview = sections.findIndex((text) => /interview preparation/i.test(text))
+    const courses = sections.findIndex((text) => /certification courses/i.test(text))
+    const readiness = sections.findIndex((text) => /exam readiness/i.test(text))
+
+    expect(interview).toBeGreaterThanOrEqual(0)
+    expect(interview).toBeLessThan(courses)
+    expect(courses).toBeLessThan(readiness)
+  })
+
+  it('puts interview preparation and courses at the top of the sidebar', () => {
+    renderApp()
+
+    // Home first, then the two main sections, before any course tool.
+    const links = [...document.querySelectorAll('.sidebar a')].map((a) => a.textContent ?? '')
+    const home = links.findIndex((text) => /^\s*🏠?\s*Home\s*$/.test(text))
+    const interview = links.findIndex((text) => /interview preparation/i.test(text))
+    const ckad = links.findIndex((text) => /CKAD/.test(text))
+    const practice = links.findIndex((text) => /practice questions/i.test(text))
+
+    expect(home).toBeLessThan(interview)
+    expect(interview).toBeLessThan(ckad)
+    expect(ckad).toBeLessThan(practice)
+  })
+
+  it('gives the two main sections more visual weight than the rest', () => {
+    renderApp()
+    const main = document.querySelector('.sidebar__section--main')
+    expect(main).not.toBeNull()
+
+    // Both live inside the emphasised block; the course tools do not.
+    expect(main?.textContent).toMatch(/interview preparation/i)
+    expect(main?.textContent).toMatch(/courses/i)
+    expect(main?.textContent).not.toMatch(/command reference/i)
+  })
+
+  it('reaches interview preparation from the mobile tab bar', () => {
+    renderApp()
+    const tabs = screen.getByRole('navigation', { name: /primary/i })
+    expect(within(tabs).getByRole('link', { name: /^Interview$/ })).toBeInTheDocument()
   })
 
   it('has a skip link for keyboard users', () => {

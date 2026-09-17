@@ -68,37 +68,44 @@ export function HomePage() {
 
   const courseWord = courseIndexes.length === 1 ? 'course' : 'courses'
 
+  /* Built from the registry so adding a topic cannot leave this list stale. */
+  const topicNames = interviewTopics.map((topic) => topic.shortTitle).join(', ')
+
   return (
     <div className="page stack-lg">
       <header className="page-header">
         <h1>DevOps Learning Hub</h1>
         <p className="muted">
           A study app for DevOps, built to work offline on a phone. Two sections:{' '}
-          <strong>certification courses</strong> ({courseIndexes.length} {courseWord} -{' '}
-          {courseIndexes.map((entry) => entry.course.examCode).join(' and ')}) and{' '}
           <strong>interview preparation</strong> ({interviewTopics.length} topics, {interview.total}{' '}
-          questions).
+          questions) and <strong>certification courses</strong> ({courseIndexes.length} {courseWord}{' '}
+          - {courseIndexes.map((entry) => entry.course.examCode).join(' and ')}).
         </p>
       </header>
 
+      {/*
+       * One card covering BOTH sections, because the app has two of them and a
+       * summary that only counted lessons would understate half the work.
+       */}
       <section aria-labelledby="overall-progress" className="card stack">
         <div className="row">
           <h2 id="overall-progress" className="card__title" style={{ flex: '1 1 auto' }}>
-            Overall progress
+            Your progress
           </h2>
           <Badge tone={readinessTone[readiness.level]}>{readiness.label}</Badge>
         </div>
-        <ProgressBar
-          value={overallPercent}
-          label={`${lessonsDone} of ${lessonsTotal} lessons complete across all ${courseWord}`}
-          showValue
-          large
-          tone={overallPercent === 100 ? 'success' : 'primary'}
-        />
         <div className="stat-grid">
           <div className="stat">
+            <div className="stat__value">{interview.percent}%</div>
+            <div className="stat__label">
+              Interview recall · {interview.known} of {interview.total}
+            </div>
+          </div>
+          <div className="stat">
             <div className="stat__value">{overallPercent}%</div>
-            <div className="stat__label">Lessons complete</div>
+            <div className="stat__label">
+              Lessons complete · {lessonsDone} of {lessonsTotal}
+            </div>
           </div>
           <div className="stat">
             <div className="stat__value">{answered}</div>
@@ -116,12 +123,87 @@ export function HomePage() {
           </div>
         </div>
         <div className="row">
-          <Link className="btn" to={continueTo}>
+          <Link className="btn" to="/interview">
+            {interview.known > 0 ? 'Continue interview prep' : 'Start interview prep'}
+          </Link>
+          <Link className="btn btn--secondary" to={continueTo}>
             {state.lastVisitedTopicId || lessonsDone > 0 ? 'Continue learning' : 'Start learning'}
           </Link>
           <Link className="btn btn--secondary" to={activeCourse.route}>
             {activeCourse.examCode} dashboard
           </Link>
+        </div>
+      </section>
+
+      <section aria-labelledby="interview" className="stack">
+        <h2 id="interview">Interview preparation</h2>
+        <Link className="card card--interactive stack-sm" to="/interview">
+          <div className="row">
+            <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
+              💬
+            </span>
+            <Badge tone="info">{interviewTopics.length} topics</Badge>
+            <Badge>{interview.total} questions</Badge>
+            {interview.review > 0 && <Badge tone="warning">{interview.review} to review</Badge>}
+          </div>
+          <strong className="card__title">DevOps interview questions</strong>
+          <p className="subtle" style={{ margin: 0 }}>
+            {topicNames} - from first-round basics to senior scenario rounds.
+          </p>
+          <ProgressBar value={interview.percent} showValue />
+          <p className="subtle" style={{ margin: 0 }}>
+            {interview.known} of {interview.total} you can answer out loud
+          </p>
+        </Link>
+      </section>
+
+      <section aria-labelledby="courses" className="stack">
+        <h2 id="courses">Certification courses</h2>
+        <div className="card-grid card-grid--2">
+          {perCourse.map(({ entry, completion }) => (
+            <Link
+              className="card card--interactive stack-sm"
+              key={entry.course.id}
+              to={entry.course.route}
+            >
+              <div className="row">
+                <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
+                  {entry.course.icon}
+                </span>
+                <Badge tone="success">Available</Badge>
+                <Badge>{entry.course.targetVersion}</Badge>
+              </div>
+              <strong className="card__title">{entry.course.title}</strong>
+              <p className="subtle" style={{ margin: 0 }}>
+                {entry.course.subtitle}
+              </p>
+              <ProgressBar value={completion.percent} showValue />
+              <p className="subtle" style={{ margin: 0 }}>
+                {entry.course.topics.length} lessons · {entry.course.questions.length} practice
+                questions ·{' '}
+                {entry.course.commandGroups.reduce((sum, group) => sum + group.entries.length, 0)}{' '}
+                reference commands
+              </p>
+            </Link>
+          ))}
+
+          {plannedCourses.map((course) => (
+            <div className="card stack-sm" key={course.id} aria-label={`${course.title} (planned)`}>
+              <div className="row">
+                <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
+                  {course.icon}
+                </span>
+                <Badge>Planned</Badge>
+              </div>
+              <strong className="card__title">{course.title}</strong>
+              <p className="subtle" style={{ margin: 0 }}>
+                {course.subtitle}
+              </p>
+              <p className="subtle" style={{ margin: 0 }}>
+                {course.note}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -200,80 +282,6 @@ export function HomePage() {
             Mock exams
           </Link>
         </div>
-      </section>
-
-      <section aria-labelledby="courses" className="stack">
-        <h2 id="courses">Certification courses</h2>
-        <div className="card-grid card-grid--2">
-          {perCourse.map(({ entry, completion }) => (
-            <Link
-              className="card card--interactive stack-sm"
-              key={entry.course.id}
-              to={entry.course.route}
-            >
-              <div className="row">
-                <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
-                  {entry.course.icon}
-                </span>
-                <Badge tone="success">Available</Badge>
-                <Badge>{entry.course.targetVersion}</Badge>
-              </div>
-              <strong className="card__title">{entry.course.title}</strong>
-              <p className="subtle" style={{ margin: 0 }}>
-                {entry.course.subtitle}
-              </p>
-              <ProgressBar value={completion.percent} showValue />
-              <p className="subtle" style={{ margin: 0 }}>
-                {entry.course.topics.length} lessons · {entry.course.questions.length} practice
-                questions ·{' '}
-                {entry.course.commandGroups.reduce((sum, group) => sum + group.entries.length, 0)}{' '}
-                reference commands
-              </p>
-            </Link>
-          ))}
-
-          {plannedCourses.map((course) => (
-            <div className="card stack-sm" key={course.id} aria-label={`${course.title} (planned)`}>
-              <div className="row">
-                <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
-                  {course.icon}
-                </span>
-                <Badge>Planned</Badge>
-              </div>
-              <strong className="card__title">{course.title}</strong>
-              <p className="subtle" style={{ margin: 0 }}>
-                {course.subtitle}
-              </p>
-              <p className="subtle" style={{ margin: 0 }}>
-                {course.note}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section aria-labelledby="interview" className="stack">
-        <h2 id="interview">Interview preparation</h2>
-        <Link className="card card--interactive stack-sm" to="/interview">
-          <div className="row">
-            <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>
-              💬
-            </span>
-            <Badge tone="info">{interviewTopics.length} topics</Badge>
-            <Badge>{interview.total} questions</Badge>
-            {interview.review > 0 && <Badge tone="warning">{interview.review} to review</Badge>}
-          </div>
-          <strong className="card__title">DevOps interview questions</strong>
-          <p className="subtle" style={{ margin: 0 }}>
-            Docker, Kubernetes, Jenkins, AWS, Terraform, GitHub Actions, Prometheus, Splunk,
-            Ansible, Python, shell scripting and Linux - from first-round basics to senior scenario
-            rounds.
-          </p>
-          <ProgressBar value={interview.percent} showValue />
-          <p className="subtle" style={{ margin: 0 }}>
-            {interview.known} of {interview.total} you can answer out loud
-          </p>
-        </Link>
       </section>
 
       <section aria-labelledby="disclaimer" className="stack">

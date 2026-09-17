@@ -3,6 +3,7 @@ import { kubernetesCoreQuestions } from './core'
 import { k8sWorkloadQuestions } from './workloads'
 import { k8sNetworkingQuestions } from './networking'
 import { k8sConfigSecurityQuestions } from './config-security'
+import { k8sScenarioQuestions } from './scenarios'
 
 export const kubernetesTopic: InterviewTopic = {
   id: 'kubernetes',
@@ -19,11 +20,13 @@ export const kubernetesTopic: InterviewTopic = {
     'A Service finds Pods by **label selector**, never by name. No match means no endpoints and no traffic.',
     'Readiness controls traffic; liveness controls restarts. Confusing them causes outages.',
     'Requests decide scheduling; limits decide throttling and OOM kills.',
+    'The scheduler places a Pod **once** and never moves it. Nothing rebalances a cluster on its own.',
   ],
   questions: [
     ...kubernetesCoreQuestions,
     ...k8sWorkloadQuestions,
     ...k8sNetworkingQuestions,
     ...k8sConfigSecurityQuestions,
+    ...k8sScenarioQuestions,
   ],
 }

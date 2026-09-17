@@ -10,30 +10,33 @@ export interface NavItem {
 }
 
 /**
- * Primary destinations, shared by the desktop sidebar and the mobile tab bar.
+ * The app has two things in it: interview preparation and certification
+ * courses. Everything else - search, practice, mock exams, the command
+ * reference - is a tool inside one of those, not a destination of its own.
  *
- * Built from the active course rather than hard-coded, so the same five tabs
- * point at whichever course you are currently studying.
+ * The navigation is built to say that. `mainNav` is what the sidebar
+ * emphasises; `courseToolsFor` and `utilityNav` are deliberately quieter.
  */
-export function primaryNavFor(course: Course): NavItem[] {
+export function mainNav(): NavItem[] {
   return [
     { to: '/', label: 'Home', shortLabel: 'Home', icon: '🏠' },
     {
-      to: course.route,
-      label: `${course.examCode} course`,
-      shortLabel: 'Learn',
-      icon: '📚',
-      matchPrefix: false,
+      to: '/interview',
+      label: 'Interview preparation',
+      shortLabel: 'Interview',
+      icon: '💬',
+      matchPrefix: true,
     },
-    {
-      to: `${course.route}/search`,
-      label: 'Search',
-      shortLabel: 'Search',
-      icon: '🔎',
-    },
+  ]
+}
+
+/** Course-scoped tools. Only meaningful once you are inside a course. */
+export function courseToolsFor(course: Course): NavItem[] {
+  return [
+    { to: `${course.route}/search`, label: 'Search', shortLabel: 'Search', icon: '🔎' },
     {
       to: `${course.route}/practice`,
-      label: 'Practice',
+      label: 'Practice questions',
       shortLabel: 'Practice',
       icon: '🎯',
       matchPrefix: true,
@@ -45,26 +48,57 @@ export function primaryNavFor(course: Course): NavItem[] {
       icon: '⏱️',
       matchPrefix: true,
     },
-  ]
-}
-
-export function secondaryNavFor(course: Course): NavItem[] {
-  return [
-    {
-      // Interview prep is not scoped to a course, so it lives here rather
-      // than in the per-course primary nav.
-      to: '/interview',
-      label: 'Interview prep',
-      shortLabel: 'Interview',
-      icon: '💬',
-      matchPrefix: true,
-    },
     {
       to: `${course.route}/commands`,
       label: 'Command reference',
       shortLabel: 'Commands',
       icon: '⌨️',
     },
-    { to: '/progress', label: 'Progress & data', shortLabel: 'Progress', icon: '💾' },
+  ]
+}
+
+export function utilityNav(): NavItem[] {
+  return [{ to: '/progress', label: 'Progress & data', shortLabel: 'Progress', icon: '💾' }]
+}
+
+/**
+ * The mobile tab bar, which has exactly five fixed slots and so cannot use
+ * the sidebar's nested shape. It carries the same priority order: the two
+ * main sections first, then the course tools people reach for most.
+ *
+ * Search is deliberately absent - it has its own button in the top bar on
+ * every screen, so spending a scarce tab slot on it would push out Exams.
+ */
+export function primaryNavFor(course: Course): NavItem[] {
+  return [
+    { to: '/', label: 'Home', shortLabel: 'Home', icon: '🏠' },
+    {
+      to: '/interview',
+      label: 'Interview preparation',
+      shortLabel: 'Interview',
+      icon: '💬',
+      matchPrefix: true,
+    },
+    {
+      to: course.route,
+      label: `${course.examCode} course`,
+      shortLabel: 'Course',
+      icon: '📚',
+      matchPrefix: false,
+    },
+    {
+      to: `${course.route}/practice`,
+      label: 'Practice questions',
+      shortLabel: 'Practice',
+      icon: '🎯',
+      matchPrefix: true,
+    },
+    {
+      to: `${course.route}/exams`,
+      label: 'Mock exams',
+      shortLabel: 'Exams',
+      icon: '⏱️',
+      matchPrefix: true,
+    },
   ]
 }
