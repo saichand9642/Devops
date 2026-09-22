@@ -5,6 +5,7 @@ import { awsOperationsQuestions } from './operations'
 import { awsPlatformQuestions } from './platform'
 import { awsScenarioQuestions } from './scenarios'
 import { awsBedrockQuestions } from './bedrock'
+import { awsCloudFormationQuestions } from './cloudformation'
 
 export const awsTopic: InterviewTopic = {
   id: 'aws',
@@ -24,6 +25,8 @@ export const awsTopic: InterviewTopic = {
     'An explicit **Deny** anywhere wins. An SCP, a permission boundary or a KMS key policy can all remove an Allow.',
     'Bedrock is a managed **inference API**, billed per token. It hosts several providers\u2019 models - it is not a model AWS built.',
     'A knowledge gap is a **retrieval** problem (RAG). Fine-tuning teaches behaviour and form, not facts.',
+    'In CloudFormation, read the change set\u2019s **Replacement** column first. `True` on a database means a new, empty one.',
+    '`DeletionPolicy` fires on stack deletion, `UpdateReplacePolicy` on replacement. Set **both** on anything holding data.',
   ],
   questions: [
     ...awsCoreQuestions,
@@ -32,5 +35,6 @@ export const awsTopic: InterviewTopic = {
     ...awsPlatformQuestions,
     ...awsScenarioQuestions,
     ...awsBedrockQuestions,
+    ...awsCloudFormationQuestions,
   ],
 }

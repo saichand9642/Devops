@@ -9,7 +9,7 @@ An installable, offline-capable study app for DevOps. It has two sections.
 
 Each covers its complete published curriculum from beginner level to exam-ready, with flow diagrams on every lesson.
 
-**Interview preparation** — 686 questions across 13 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Grafana & observability, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
+**Interview preparation** — 697 questions across 13 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Grafana & observability, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
 
 Built as a React + TypeScript + Vite Progressive Web App. No backend and no tracking — everything runs in your browser and your progress stays on your device. Opening it asks for your email address and checks it against a list you control, so the app stays with the group you shared it with and each person keeps their own progress.
 
@@ -27,7 +27,7 @@ Built as a React + TypeScript + Vite Progressive Web App. No backend and no trac
 | **Mock exams**              | Timed papers weighted per domain, scored per domain, with attempt history saved locally                                                                                                                                                                                                                                                                                                                                                            |
 | **258 reference commands**  | Searchable kubectl / Helm / Kustomize and Terraform CLI references with copy buttons, plus the YAML and HCL templates worth memorising                                                                                                                                                                                                                                                                                                             |
 | **Search**                  | Across lesson text, objects and fields, commands and the question bank — filterable by domain, difficulty and result type, per course                                                                                                                                                                                                                                                                                                              |
-| **686 interview questions** | 13 topics, 50–72 each, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                               |
+| **697 interview questions** | 13 topics, 50–83 each, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                               |
 | **Progress tracking**       | Per-lesson status, practice history, exam attempts, study streak and an exam-readiness indicator — plus interview recall — with JSON export and import                                                                                                                                                                                                                                                                                             |
 
 ### Diagrams
@@ -102,13 +102,13 @@ A separate section from the courses, at `/interview`. A course teaches a syllabu
 | 🐳 Docker & containers | 52        |     | 🏗️ Terraform & IaC         | 50        |
 | ☸️ Kubernetes          | 62        |     | 📈 Prometheus & monitoring | 50        |
 | 🔧 Jenkins & CI/CD     | 50        |     | 📊 Grafana & observability | 50        |
-| ☁️ AWS                 | 72        |     | 📋 Ansible                 | 50        |
+| ☁️ AWS                 | 83        |     | 📋 Ansible                 | 50        |
 | ⚙️ GitHub Actions      | 50        |     | 🔍 Splunk & log management | 50        |
 |                        |           |     | 🐍 Python for DevOps       | 50        |
 |                        |           |     | 🐚 Shell scripting         | 50        |
 |                        |           |     | 🐧 Linux & troubleshooting | 50        |
 
-**686 questions in total: 163 basic, 299 intermediate and 224 senior.** 136 are multiple choice (98 single-answer, 38 select-all), **90 are scenario questions** of the "production is broken, walk me through it" kind, and the remaining 460 are open questions. They carry 212 diagrams and 771 code samples. Kubernetes and AWS carry the most scenarios (17 each), since those are where the troubleshooting rounds concentrate. The AWS topic includes 12 questions on **Amazon Bedrock** — the managed inference API, Knowledge Bases and RAG, Guardrails, data residency, and the RAG-versus-fine-tuning decision.
+**697 questions in total: 164 basic, 303 intermediate and 230 senior.** 137 are multiple choice (99 single-answer, 38 select-all), **93 are scenario questions** of the "production is broken, walk me through it" kind, and the remaining 467 are open questions. They carry 218 diagrams and 789 code samples. AWS and Kubernetes carry the most scenarios (20 and 17), since those are where the troubleshooting rounds concentrate. The AWS topic includes 12 questions on **Amazon Bedrock** (the managed inference API, Knowledge Bases and RAG, Guardrails, data residency) and 11 on **CloudFormation** (template anatomy, change sets and replacement behaviour, nested stacks versus exports, StackSets, drift, custom resources, and the stuck-stack incidents).
 
 Every question has the same shape, and all of it is written for a beginner to follow:
 
@@ -371,7 +371,7 @@ The suite covers:
 - **Diagram rendering** — kind labels, captions, the text-version disclosure, `aria-hidden` on the SVG, unique marker ids per instance, and one lifeline per sequence participant
 - **HCL highlighting** — the hand-written `highlight.js` definition, pinning each token class the stylesheet colours, plus HTML escaping so a sample can never inject markup
 - **Exam generation** — both courses: full-length papers honouring the blueprint, determinism for a given seed, 100% and 0% scoring paths, and per-domain drills
-- **Interview content integrity** — the 686 questions: unique prefixed ids, answer keys pointing at options that exist, never all or none correct, `mcq` with one answer and `multi` with several, basic-to-advanced coverage in every topic, registered code languages only, no hardcoded credentials, and no markdown markers in SVG diagram text
+- **Interview content integrity** — the 697 questions: unique prefixed ids, answer keys pointing at options that exist, never all or none correct, `mcq` with one answer and `multi` with several, basic-to-advanced coverage in every topic, registered code languages only, no hardcoded credentials, and no markdown markers in SVG diagram text
 - **Interview behaviour** — the answer stays hidden until asked for, a choice question refuses to grade until you commit to an option, an open question reveals without grading, recall persists and un-marks on a second click, a flagged question reaches the cross-topic revision queue, and `/interview/review` outranks the dynamic `/interview/:topicId` route
 - **Interview recall accounting** — only _I know this_ moves the bar, review and untouched are counted apart, the suggested next topic moves on as questions are answered, and a state saved before the interview section existed migrates with its courses intact
 
