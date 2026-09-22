@@ -1,0 +1,352 @@
+import type { CommandGroup } from '../types'
+
+/**
+ * Searchable Docker CLI reference.
+ *
+ * Grouped by what you are trying to do rather than by CLI noun, because that
+ * is how people look things up under pressure.
+ */
+export const dockerCommandGroups: CommandGroup[] = [
+  {
+    id: 'dk-cmd-run',
+    title: 'Running and inspecting containers',
+    description: 'Starting, stopping and looking inside a container.',
+    entries: [
+      {
+        id: 'dk-c-run',
+        command: 'docker run -d --name <name> -p <host>:<container> <image>',
+        description: 'Create and start a container in the background with a published port.',
+        placeholders: ['<name>', '<host>', '<container>', '<image>'],
+        example: 'docker run -d --name web -p 127.0.0.1:8080:80 nginx:1.27',
+        notes: 'Prefix the host port with 127.0.0.1: unless it should be publicly reachable.',
+        tags: ['run', 'ports', 'basics'],
+      },
+      {
+        id: 'dk-c-run-it',
+        command: 'docker run -it --rm <image> <command>',
+        description: 'Run interactively with a terminal and remove the container on exit.',
+        placeholders: ['<image>', '<command>'],
+        example: 'docker run -it --rm alpine sh',
+        notes: 'Without -it a shell reads EOF immediately and the container exits.',
+        tags: ['run', 'interactive', 'debug'],
+      },
+      {
+        id: 'dk-c-ps',
+        command: 'docker ps -a',
+        description: 'List containers including stopped ones, with their exit status.',
+        example: 'docker ps -a --filter "status=exited"',
+        tags: ['inspect', 'basics'],
+      },
+      {
+        id: 'dk-c-exec',
+        command: 'docker exec -it <container> sh',
+        description: 'Open a shell inside a running container.',
+        placeholders: ['<container>'],
+        notes: 'Fails on distroless and scratch images, which contain no shell.',
+        tags: ['debug', 'exec'],
+      },
+      {
+        id: 'dk-c-stop',
+        command: 'docker stop --time <seconds> <container>',
+        description: 'SIGTERM, then SIGKILL after the grace period. Default is 10 seconds.',
+        placeholders: ['<seconds>', '<container>'],
+        example: 'docker stop --time 30 api',
+        tags: ['lifecycle', 'signals'],
+      },
+      {
+        id: 'dk-c-inspect-state',
+        command:
+          'docker inspect -f "{{.State.Status}} {{.State.ExitCode}} {{.State.OOMKilled}}" <container>',
+        description:
+          'State, exit code and whether the kernel killed it for memory - the fastest triage.',
+        placeholders: ['<container>'],
+        notes: 'Exit 137 with OOMKilled false means a stop that timed out, not a memory problem.',
+        tags: ['debug', 'inspect', 'exit codes'],
+      },
+      {
+        id: 'dk-c-stats',
+        command: 'docker stats --no-stream',
+        description: 'Current CPU, memory and network use per container, against its limits.',
+        tags: ['resources', 'monitoring'],
+      },
+      {
+        id: 'dk-c-update',
+        command: 'docker update --memory <size> --cpus <n> <container>',
+        description: 'Change resource limits on a running container without recreating it.',
+        placeholders: ['<size>', '<n>', '<container>'],
+        example: 'docker update --memory 512m --cpus 1 api',
+        tags: ['resources', 'limits'],
+      },
+    ],
+  },
+  {
+    id: 'dk-cmd-images',
+    title: 'Images, builds and registries',
+    description: 'Building, tagging, inspecting and publishing images.',
+    entries: [
+      {
+        id: 'dk-c-build',
+        command: 'docker build -t <name>:<tag> .',
+        description:
+          'Build the Dockerfile in the current directory, using it as the build context.',
+        placeholders: ['<name>', '<tag>'],
+        example: 'docker build -t myapp:1.4.0 .',
+        tags: ['build', 'basics'],
+      },
+      {
+        id: 'dk-c-build-target',
+        command: 'docker build --target <stage> -t <name>:<tag> .',
+        description: 'Stop at a named multi-stage build stage instead of the last one.',
+        placeholders: ['<stage>', '<name>', '<tag>'],
+        example: 'docker build --target dev -t myapp:dev .',
+        tags: ['build', 'multi-stage'],
+      },
+      {
+        id: 'dk-c-build-plain',
+        command: 'docker build --progress=plain --no-cache -t <name> .',
+        description:
+          'Full build output with no cache - how you see the real error from a failing step.',
+        placeholders: ['<name>'],
+        tags: ['build', 'debug', 'cache'],
+      },
+      {
+        id: 'dk-c-history',
+        command: 'docker image history <image>',
+        description: 'Every layer with the instruction that created it and its size.',
+        placeholders: ['<image>'],
+        notes: 'The fastest way to find which instruction is responsible for image size.',
+        tags: ['images', 'layers', 'size'],
+      },
+      {
+        id: 'dk-c-digest',
+        command: 'docker image inspect <image> --format "{{index .RepoDigests 0}}"',
+        description: 'The immutable digest reference for a pulled image.',
+        placeholders: ['<image>'],
+        notes: 'Paste this into a Dockerfile or deployment for a reproducible reference.',
+        tags: ['registry', 'digest', 'reproducibility'],
+      },
+      {
+        id: 'dk-c-tag',
+        command: 'docker tag <source> <target>',
+        description: 'Add another name to an existing image. Copies no data.',
+        placeholders: ['<source>', '<target>'],
+        example: 'docker tag myapp:dev ghcr.io/acme/myapp:1.2.0',
+        tags: ['registry', 'tags'],
+      },
+      {
+        id: 'dk-c-login',
+        command: 'echo "$TOKEN" | docker login <registry> -u <user> --password-stdin',
+        description:
+          'Authenticate without the credential appearing in the process list or shell history.',
+        placeholders: ['<registry>', '<user>'],
+        tags: ['registry', 'security', 'ci'],
+      },
+      {
+        id: 'dk-c-buildx-multi',
+        command: 'docker buildx build --platform linux/amd64,linux/arm64 -t <ref> --push .',
+        description: 'Build for several architectures and publish a manifest list under one tag.',
+        placeholders: ['<ref>'],
+        notes: 'Multi-platform builds cannot be loaded locally - --push is required.',
+        tags: ['buildx', 'multi-arch', 'ci'],
+      },
+      {
+        id: 'dk-c-buildx-cache',
+        command:
+          'docker buildx build --cache-from type=registry,ref=<ref>:cache --cache-to type=registry,ref=<ref>:cache,mode=max -t <ref>:<tag> --push .',
+        description: 'Import and export build cache so an ephemeral CI runner starts warm.',
+        placeholders: ['<ref>', '<tag>'],
+        notes: 'mode=max exports cache for intermediate layers, not only the final ones.',
+        tags: ['buildx', 'cache', 'ci'],
+      },
+      {
+        id: 'dk-c-imagetools',
+        command: 'docker buildx imagetools inspect <ref>',
+        description: 'Read a published manifest from the registry without pulling the image.',
+        placeholders: ['<ref>'],
+        tags: ['registry', 'multi-arch', 'digest'],
+      },
+      {
+        id: 'dk-c-scout',
+        command: 'docker scout cves <image>',
+        description: 'List known vulnerabilities in an image by severity.',
+        placeholders: ['<image>'],
+        tags: ['security', 'scanning'],
+      },
+    ],
+  },
+  {
+    id: 'dk-cmd-storage-net',
+    title: 'Storage and networking',
+    description: 'Volumes, mounts, networks and published ports.',
+    entries: [
+      {
+        id: 'dk-c-volume-create',
+        command: 'docker volume create <name>',
+        description: 'Create a named volume with its own lifecycle.',
+        placeholders: ['<name>'],
+        tags: ['volumes', 'storage'],
+      },
+      {
+        id: 'dk-c-mount-volume',
+        command: 'docker run --mount type=volume,source=<name>,target=<path> <image>',
+        description: 'Mount a named volume. Explicit syntax that fails loudly on a typo.',
+        placeholders: ['<name>', '<path>', '<image>'],
+        notes: 'An empty named volume is populated with the image content on first use.',
+        tags: ['volumes', 'storage', 'run'],
+      },
+      {
+        id: 'dk-c-mount-bind',
+        command: 'docker run --mount type=bind,source=<host-path>,target=<path>,readonly <image>',
+        description: 'Bind-mount a host path, read-only. Never copies image content in.',
+        placeholders: ['<host-path>', '<path>', '<image>'],
+        tags: ['bind mounts', 'development'],
+      },
+      {
+        id: 'dk-c-volume-backup',
+        command:
+          'docker run --rm -v <volume>:/data:ro -v "$(pwd)":/backup alpine tar czf /backup/<name>.tar.gz -C /data .',
+        description: 'Back up a named volume using a throwaway container.',
+        placeholders: ['<volume>', '<name>'],
+        notes:
+          'Stop the container first, or use the database’s own dump tool for a consistent copy.',
+        tags: ['volumes', 'backup'],
+      },
+      {
+        id: 'dk-c-network-create',
+        command: 'docker network create <name>',
+        description: 'Create a user-defined bridge so containers resolve each other by name.',
+        placeholders: ['<name>'],
+        notes: 'The default bridge network provides no DNS between containers.',
+        tags: ['networking', 'dns'],
+      },
+      {
+        id: 'dk-c-port',
+        command: 'docker port <container>',
+        description: 'Show which host ports map to which container ports, and their bind address.',
+        placeholders: ['<container>'],
+        tags: ['networking', 'ports', 'debug'],
+      },
+      {
+        id: 'dk-c-netshoot',
+        command: 'docker run --rm -it --network container:<container> nicolaka/netshoot ss -ltn',
+        description: 'Attach a diagnostic toolbox to another container’s network namespace.',
+        placeholders: ['<container>'],
+        notes: 'The way to debug an image that has no shell or tools of its own.',
+        tags: ['networking', 'debug', 'distroless'],
+      },
+    ],
+  },
+  {
+    id: 'dk-cmd-compose',
+    title: 'Docker Compose',
+    description: 'Running a multi-service application from a Compose file.',
+    entries: [
+      {
+        id: 'dk-c-compose-up',
+        command: 'docker compose up -d',
+        description: 'Create the network, volumes and containers, and start everything detached.',
+        tags: ['compose', 'basics'],
+      },
+      {
+        id: 'dk-c-compose-down',
+        command: 'docker compose down',
+        description: 'Remove containers and the project network. Named volumes survive.',
+        notes: 'Adding -v deletes the named volumes, and your data with them.',
+        tags: ['compose', 'cleanup'],
+      },
+      {
+        id: 'dk-c-compose-config',
+        command: 'docker compose config',
+        description:
+          'Print the fully merged and interpolated configuration without starting anything.',
+        notes: 'The authoritative answer to "what will actually run".',
+        tags: ['compose', 'debug', 'overrides'],
+      },
+      {
+        id: 'dk-c-compose-files',
+        command: 'docker compose -f <base> -f <override> up -d',
+        description: 'Merge several Compose files explicitly. Later files override earlier ones.',
+        placeholders: ['<base>', '<override>'],
+        notes: 'An explicit -f disables automatic pickup of compose.override.yaml.',
+        tags: ['compose', 'overrides', 'environments'],
+      },
+      {
+        id: 'dk-c-compose-profile',
+        command: 'docker compose --profile <name> up -d',
+        description: 'Start the default services plus everything in the named profile.',
+        placeholders: ['<name>'],
+        tags: ['compose', 'profiles'],
+      },
+      {
+        id: 'dk-c-compose-rebuild',
+        command: 'docker compose up -d --build --no-deps <service>',
+        description: 'Rebuild and recreate one service without touching its dependencies.',
+        placeholders: ['<service>'],
+        tags: ['compose', 'build'],
+      },
+    ],
+  },
+  {
+    id: 'dk-cmd-ops',
+    title: 'Logs, health and housekeeping',
+    description: 'Diagnostics, and reclaiming disk before it runs out.',
+    entries: [
+      {
+        id: 'dk-c-logs',
+        command: 'docker logs -f --tail <n> --timestamps <container>',
+        description: 'Follow recent output. Works on stopped containers too.',
+        placeholders: ['<n>', '<container>'],
+        example: 'docker logs -f --tail 100 --timestamps api',
+        tags: ['logs', 'debug'],
+      },
+      {
+        id: 'dk-c-logs-since',
+        command: 'docker logs --since <duration> <container>',
+        description: 'Only output from the last period - usually what an incident needs.',
+        placeholders: ['<duration>', '<container>'],
+        example: 'docker logs --since 10m api',
+        tags: ['logs', 'debug'],
+      },
+      {
+        id: 'dk-c-health',
+        command: 'docker inspect --format "{{json .State.Health}}" <container>',
+        description: 'Healthcheck status and the output of the failing probes.',
+        placeholders: ['<container>'],
+        tags: ['healthcheck', 'debug'],
+      },
+      {
+        id: 'dk-c-unhealthy',
+        command: 'docker ps --filter health=unhealthy',
+        description: 'List every container currently failing its healthcheck.',
+        tags: ['healthcheck', 'monitoring'],
+      },
+      {
+        id: 'dk-c-events',
+        command: 'docker events --filter "container=<container>"',
+        description: 'Stream lifecycle events live: create, start, die, oom, stop.',
+        placeholders: ['<container>'],
+        tags: ['debug', 'monitoring'],
+      },
+      {
+        id: 'dk-c-df',
+        command: 'docker system df -v',
+        description: 'Disk used by images, containers, volumes and build cache, with shared sizes.',
+        tags: ['housekeeping', 'disk'],
+      },
+      {
+        id: 'dk-c-prune-images',
+        command: 'docker image prune -a',
+        description: 'Remove images no container references. Usually frees the most space.',
+        notes: 'Without -a only dangling (untagged) images are removed.',
+        tags: ['housekeeping', 'disk'],
+      },
+      {
+        id: 'dk-c-prune-builder',
+        command: 'docker builder prune -af',
+        description: 'Clear the build cache, which grows quietly and can reach many gigabytes.',
+        notes: 'The next build will be slow. Do not do this reflexively.',
+        tags: ['housekeeping', 'cache', 'disk'],
+      },
+    ],
+  },
+]
