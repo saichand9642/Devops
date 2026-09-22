@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { buildExam, buildDomainDrill } from './lib/exam-builder'
 import { scoreExam } from './lib/scoring'
-import { terraformCourse } from './content/terraform'
-import { ckadCourse } from './content/ckad'
+import { courses } from './content/courses'
 
+/*
+ * Driven by the registry rather than a hard-coded list, so a newly added
+ * course is covered by these checks the moment it is registered.
+ */
 describe('exam generation for every course', () => {
-  for (const course of [ckadCourse, terraformCourse]) {
+  for (const course of courses) {
     it(`builds a full-length ${course.id} paper honouring the blueprint`, () => {
       const paper = buildExam(course, course.examBlueprint.questionCount, 42)
       expect(paper.questions.length).toBe(course.examBlueprint.questionCount)

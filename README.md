@@ -2,12 +2,13 @@
 
 An installable, offline-capable study app for DevOps. It has two sections.
 
-**Certification courses** — two are installed:
+**Courses** — three are installed:
 
 - **CKAD — Certified Kubernetes Application Developer** (Kubernetes v1.35)
 - **Terraform Associate (004)** (Terraform v1.16)
+- **Containers & Docker fundamentals** (Docker Engine 27 / Compose v2)
 
-Each covers its complete published curriculum from beginner level to exam-ready, with flow diagrams on every lesson.
+The two certification courses cover their complete published curriculum from beginner level to exam-ready. Docker has no current certification, so that course follows a teaching order of its own and its mock-exam figures are labelled as the app's own study aid. Every lesson in all three carries flow diagrams and a hands-on lab.
 
 **Interview preparation** — 697 questions across 13 topics (Docker, Kubernetes, Jenkins, GitHub Actions, AWS, Terraform, Prometheus, Grafana & observability, Ansible, Splunk, Python, shell scripting and Linux), from first-round basics through to senior scenario rounds.
 
@@ -19,16 +20,16 @@ Built as a React + TypeScript + Vite Progressive Web App. No backend and no trac
 
 ## What is in it
 
-|                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **91 lessons**              | 50 CKAD + 41 Terraform, each with a hands-on lab. Every lesson has a beginner explanation, why it matters, how it works, **flow diagrams**, key objects and fields, a real-world example, complete YAML or HCL, imperative commands, the declarative method, verification commands, troubleshooting commands, common mistakes, exam tips, a summary, three or more practice questions with hidden answers, and a hands-on lab with a full solution |
-| **234 practice questions**  | 116 CKAD + 118 Terraform, plus 314 in-lesson practice questions. Multiple choice, multi-select, free-text command, YAML/HCL correction, troubleshooting scenarios and performance-based lab tasks — all with explanations                                                                                                                                                                                                                          |
-| **172 diagrams**            | Flow, sequence, containment and decision diagrams, rendered as inline SVG from typed data — theme-aware, offline, and with a text version of every one                                                                                                                                                                                                                                                                                             |
-| **Mock exams**              | Timed papers weighted per domain, scored per domain, with attempt history saved locally                                                                                                                                                                                                                                                                                                                                                            |
-| **258 reference commands**  | Searchable kubectl / Helm / Kustomize and Terraform CLI references with copy buttons, plus the YAML and HCL templates worth memorising                                                                                                                                                                                                                                                                                                             |
-| **Search**                  | Across lesson text, objects and fields, commands and the question bank — filterable by domain, difficulty and result type, per course                                                                                                                                                                                                                                                                                                              |
-| **697 interview questions** | 13 topics, 50–83 each, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                               |
-| **Progress tracking**       | Per-lesson status, practice history, exam attempts, study streak and an exam-readiness indicator — plus interview recall — with JSON export and import                                                                                                                                                                                                                                                                                             |
+|                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **106 lessons**             | 50 CKAD + 41 Terraform + 15 Docker, each with a hands-on lab. Every lesson has a beginner explanation, why it matters, how it works, **flow diagrams**, key objects and fields, a real-world example, complete YAML or HCL, imperative commands, the declarative method, verification commands, troubleshooting commands, common mistakes, exam tips, a summary, three or more practice questions with hidden answers, and a hands-on lab with a full solution |
+| **278 practice questions**  | 116 CKAD + 118 Terraform + 44 Docker, plus 374 in-lesson practice questions. Multiple choice, multi-select, free-text command, YAML/HCL correction, troubleshooting scenarios and performance-based lab tasks — all with explanations                                                                                                                                                                                                                          |
+| **201 diagrams**            | Flow, sequence, containment and decision diagrams, rendered as inline SVG from typed data — theme-aware, offline, and with a text version of every one                                                                                                                                                                                                                                                                                                         |
+| **Mock exams**              | Timed papers weighted per domain, scored per domain, with attempt history saved locally                                                                                                                                                                                                                                                                                                                                                                        |
+| **298 reference commands**  | Searchable kubectl / Helm / Kustomize, Terraform and Docker CLI references with copy buttons, plus the YAML and HCL templates worth memorising                                                                                                                                                                                                                                                                                                                 |
+| **Search**                  | Across lesson text, objects and fields, commands and the question bank — filterable by domain, difficulty and result type, per course                                                                                                                                                                                                                                                                                                                          |
+| **697 interview questions** | 13 topics, 50–83 each, from first-round basics to senior scenario rounds. Every question states what the interviewer is testing, how to answer it, the traps to avoid and the follow-ups they will ask next — with code, diagrams and a self-assessed revision queue                                                                                                                                                                                           |
+| **Progress tracking**       | Per-lesson status, practice history, exam attempts, study streak and an exam-readiness indicator — plus interview recall — with JSON export and import                                                                                                                                                                                                                                                                                                         |
 
 ### Diagrams
 
@@ -89,7 +90,30 @@ Sources, linked in the app itself:
 - [Terraform documentation](https://developer.hashicorp.com/terraform/docs)
 - [HCP Terraform documentation](https://developer.hashicorp.com/terraform/cloud-docs)
 
-**Check the official curriculum before your exam.** Both are updated periodically, and this app is a study aid, not a source of truth.
+#### Containers & Docker fundamentals
+
+**There is no current Docker certification.** The Docker Certified Associate was retired, so no vendor publishes a curriculum, a weighting or a pass mark for this material. The six sections below are a **teaching order chosen for this app**, and the mock-exam weights, question count and 70% target are the app's **own study aids** — every Docker section shows a section number rather than a percentage, and the app says so wherever those figures appear. Content verified against the official Docker documentation on **2026-09-22** (Docker Engine 27 / Compose v2).
+
+| Section                              | Weight (app's own) | Lessons |
+| ------------------------------------ | ------------------ | ------- |
+| 1. Containers, images and registries | 15%                | 3       |
+| 2. Building images                   | 25%                | 3       |
+| 3. Running containers                | 20%                | 2       |
+| 4. Storage and networking            | 15%                | 2       |
+| 5. Docker Compose                    | 10%                | 2       |
+| 6. Security and operations           | 15%                | 3       |
+
+Every lab runs on a single machine with no cloud account — the only prerequisites are Docker and, for section 5, the Compose plugin that ships with it.
+
+Sources, linked in the app itself:
+
+- [Docker documentation](https://docs.docker.com/)
+- [Dockerfile reference](https://docs.docker.com/reference/dockerfile/)
+- [Building best practices](https://docs.docker.com/build/building/best-practices/)
+- [Compose file reference](https://docs.docker.com/reference/compose-file/)
+- [OCI image specification](https://github.com/opencontainers/image-spec/blob/main/spec.md)
+
+**Check the official curriculum before your exam.** The two certification curricula are updated periodically, and this app is a study aid, not a source of truth.
 
 ---
 
